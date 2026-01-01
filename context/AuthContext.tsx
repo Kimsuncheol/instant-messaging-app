@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { subscribeToAuthChanges } from "../lib/authService";
+import { initializePresence, cleanupPresence } from "../lib/presenceService";
+
 
 interface AuthContextType {
   user: User | null;
@@ -21,12 +23,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges((currentUser) => {
+      if (currentUser) {
+        initializePresence(currentUser.uid);
+      } else if (user) {
+        // Cleanup if we had a previous user
+        cleanupPresence(user.uid);
+      }
       setUser(currentUser);
       setLoading(false);
     });
 
+
     return () => unsubscribe();
-  }, []);
+  }, [user]);
+
 
   return (
     <AuthContext.Provider value={{ user, loading }}>

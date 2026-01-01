@@ -1,18 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Box, 
   List, 
-  ListItem, 
+  ListItemButton, 
   ListItemAvatar, 
   ListItemText, 
   Avatar, 
   CircularProgress, 
-  Typography, 
-  Button 
+  Typography 
 } from "@mui/material";
 import { UserProfile } from "@/lib/userService";
+import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
+import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
 
 interface NewChatResultsProps {
   loading: boolean;
@@ -27,48 +28,93 @@ export const NewChatResults: React.FC<NewChatResultsProps> = ({
   searchTerm, 
   onSelectUser 
 }) => {
+  const [presences, setPresences] = useState<Record<string, UserPresence>>({});
+
+  useEffect(() => {
+    if (users.length === 0) {
+      setPresences({});
+      return;
+    }
+
+    const userIds = users.map(u => u.uid);
+    return subscribeToMultiplePresences(userIds, (newPresences) => {
+      setPresences(newPresences);
+    });
+  }, [users]);
+
   return (
-    <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+    <Box sx={{ flexGrow: 1, overflowY: 'auto', bgcolor: '#111B21' }}>
       {loading ? (
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress size={24} />
+        <Box display="flex" justifyContent="center" py={6}>
+          <CircularProgress size={28} sx={{ color: '#00A884' }} />
         </Box>
       ) : users.length > 0 ? (
-        <List>
+        <List sx={{ py: 0 }}>
           {users.map((user) => (
-            <ListItem 
-              key={user.uid} 
-              component={Button}
+            <ListItemButton
+              key={user.uid}
               onClick={() => onSelectUser(user.uid)}
               sx={{ 
-                borderRadius: '12px', 
-                mb: 1, 
-                textAlign: 'left',
-                textTransform: 'none',
-                justifyContent: 'flex-start',
-                color: 'text.primary',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' }
+                px: 3,
+                py: 1.5,
+                '&:hover': { 
+                  bgcolor: '#202C33',
+                },
               }}
             >
               <ListItemAvatar>
-                <Avatar src={user.photoURL}>{user.displayName[0]}</Avatar>
+                <ActiveStatusBadge presence={presences[user.uid]}>
+                  <Avatar 
+                    src={user.photoURL}
+                    sx={{ 
+                      width: 50, 
+                      height: 50,
+                      bgcolor: '#6B7C85',
+                    }}
+                  >
+                    {user.displayName[0]}
+                  </Avatar>
+                </ActiveStatusBadge>
               </ListItemAvatar>
               <ListItemText 
-                primary={user.displayName} 
-                secondary={user.email} 
-                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                primary={
+                  <Typography 
+                    sx={{ 
+                      color: '#E9EDEF',
+                      fontWeight: 400,
+                      fontSize: '1rem',
+                    }}
+                  >
+                    {user.displayName}
+                  </Typography>
+                }
+                secondary={
+                  <Typography 
+                    sx={{ 
+                      color: '#8696A0',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    {user.email}
+                  </Typography>
+                }
+                sx={{ ml: 1 }}
               />
-            </ListItem>
+            </ListItemButton>
           ))}
         </List>
       ) : searchTerm.length >= 3 ? (
-        <Typography variant="body2" color="text.secondary" align="center" py={4}>
-          No users found.
-        </Typography>
+        <Box sx={{ textAlign: 'center', py: 6, px: 3 }}>
+          <Typography sx={{ color: '#8696A0', fontSize: '0.9375rem' }}>
+            No contacts found
+          </Typography>
+        </Box>
       ) : (
-        <Typography variant="body2" color="text.secondary" align="center" py={4}>
-          Type at least 3 characters to search.
-        </Typography>
+        <Box sx={{ textAlign: 'center', py: 6, px: 3 }}>
+          <Typography sx={{ color: '#8696A0', fontSize: '0.9375rem' }}>
+            Type at least 3 characters to search
+          </Typography>
+        </Box>
       )}
     </Box>
   );

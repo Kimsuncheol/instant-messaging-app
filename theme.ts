@@ -1,47 +1,191 @@
+"use client";
+
 import { createTheme } from "@mui/material/styles";
+
+// WhatsApp color palette
+const whatsappColors = {
+  // Primary teal/green
+  tealGreen: "#00A884",
+  tealGreenDark: "#008069",
+  lightGreen: "#25D366",
+  
+  // Dark mode backgrounds
+  panelBg: "#111B21",
+  panelBgDeep: "#0B141A",
+  conversationBg: "#0B141A",
+  headerBg: "#202C33",
+  
+  // Message bubbles
+  outgoingBubble: "#005C4B",
+  incomingBubble: "#202C33",
+  
+  // Text colors
+  primaryText: "#E9EDEF",
+  secondaryText: "#8696A0",
+  
+  // Borders & dividers
+  border: "#2A3942",
+  divider: "#2A3942",
+  
+  // Hover states
+  hoverBg: "#2A3942",
+  activeBg: "#2A3942",
+  
+  // Input
+  inputBg: "#2A3942",
+  searchBg: "#111B21",
+};
 
 const theme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#6366f1", // Indigo 600
+      main: whatsappColors.tealGreen,
+      dark: whatsappColors.tealGreenDark,
+      light: whatsappColors.lightGreen,
     },
     secondary: {
-      main: "#a855f7", // Purple 500
+      main: whatsappColors.secondaryText,
     },
     background: {
-      default: "#050505",
-      paper: "#0f0f0f",
+      default: whatsappColors.conversationBg,
+      paper: whatsappColors.panelBg,
     },
     text: {
-      primary: "#ffffff",
-      secondary: "#a1a1aa",
+      primary: whatsappColors.primaryText,
+      secondary: whatsappColors.secondaryText,
     },
+    divider: whatsappColors.divider,
   },
   typography: {
-    fontFamily: "inherit",
-    h1: {
-      fontWeight: 700,
+    fontFamily: '"Segoe UI", "Helvetica Neue", Helvetica, "Lucida Grande", Arial, sans-serif',
+    h5: {
+      fontWeight: 500,
+      fontSize: "1.1rem",
     },
-    h2: {
-      fontWeight: 600,
+    h6: {
+      fontWeight: 500,
+      fontSize: "1rem",
     },
+    body1: {
+      fontSize: "0.9375rem",
+    },
+    body2: {
+      fontSize: "0.8125rem",
+    },
+    caption: {
+      fontSize: "0.6875rem",
+      color: whatsappColors.secondaryText,
+    },
+  },
+  shape: {
+    borderRadius: 8,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: "12px",
           textTransform: "none",
-          fontWeight: 600,
+          borderRadius: 8,
+          fontWeight: 500,
+        },
+        contained: {
+          backgroundColor: whatsappColors.tealGreen,
+          "&:hover": {
+            backgroundColor: whatsappColors.tealGreenDark,
+          },
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: "24px",
           backgroundImage: "none",
+          backgroundColor: whatsappColors.panelBg,
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: whatsappColors.panelBg,
+          borderRight: `1px solid ${whatsappColors.border}`,
+        },
+      },
+    },
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          "&:hover": {
+            backgroundColor: whatsappColors.hoverBg,
+          },
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          "&:hover": {
+            backgroundColor: whatsappColors.hoverBg,
+          },
+          "&.Mui-selected": {
+            backgroundColor: whatsappColors.activeBg,
+            "&:hover": {
+              backgroundColor: whatsappColors.activeBg,
+            },
+          },
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          "& .MuiOutlinedInput-root": {
+            backgroundColor: whatsappColors.inputBg,
+            borderRadius: 8,
+            "& fieldset": {
+              border: "none",
+            },
+            "&:hover fieldset": {
+              border: "none",
+            },
+            "&.Mui-focused fieldset": {
+              border: "none",
+            },
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          color: whatsappColors.secondaryText,
+          "&:hover": {
+            backgroundColor: whatsappColors.hoverBg,
+          },
+        },
+      },
+    },
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: whatsappColors.headerBg,
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          borderColor: whatsappColors.divider,
+        },
+      },
+    },
+    MuiModal: {
+      styleOverrides: {
+        root: {
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+          },
         },
       },
     },
@@ -49,3 +193,4 @@ const theme = createTheme({
 });
 
 export default theme;
+export { whatsappColors };

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Drawer, Divider } from "@mui/material";
+import { Drawer } from "@mui/material";
 import { SidebarHeader } from "./SidebarHeader";
-import { SidebarChatList } from "./SidebarChatList";
+import { ChatList } from "@/components/chat/ChatList";
 import { SidebarUserInfo } from "./SidebarUserInfo";
 import { User } from "firebase/auth";
 
@@ -12,27 +12,35 @@ interface DashboardSidebarProps {
   onLogout: () => void;
   onNewChat: () => void;
   width: number;
+  onSelectChat: (chatId: string) => void;
+  selectedChatId?: string;
 }
 
-export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, onLogout, onNewChat, width }) => {
+export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  user, 
+  onLogout, 
+  onNewChat, 
+  width,
+  onSelectChat,
+  selectedChatId
+}) => {
   return (
     <Drawer
       variant="permanent"
       sx={{
         width: width,
         flexShrink: 0,
-        '& .MuiDrawer-paper': {
+        "& .MuiDrawer-paper": {
           width: width,
-          bgcolor: 'background.paper',
-          borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+          bgcolor: "#111B21",
+          borderRight: "1px solid #2A3942",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
       <SidebarHeader onLogout={onLogout} onNewChat={onNewChat} />
-
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
-      <SidebarChatList />
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
+      <ChatList onSelectChat={onSelectChat} selectedChatId={selectedChatId} />
       <SidebarUserInfo user={user} />
     </Drawer>
   );

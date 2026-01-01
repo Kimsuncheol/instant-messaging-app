@@ -6,30 +6,40 @@ import { Box } from "@mui/material";
 export const LoginBackground: React.FC = () => {
   return (
     <>
+      {/* WhatsApp-style top header bar */}
       <Box
         sx={{
           position: "absolute",
-          top: "-10%",
-          left: "-10%",
-          width: "500px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "rgba(99, 102, 241, 0.1)",
-          filter: "blur(120px)",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "220px",
+          bgcolor: "#00A884",
           zIndex: 0,
         }}
       />
+      {/* Background pattern */}
       <Box
         sx={{
           position: "absolute",
-          bottom: "-10%",
-          right: "-10%",
-          width: "500px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "rgba(168, 85, 247, 0.1)",
-          filter: "blur(120px)",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgcolor: "#111B21",
           zIndex: 0,
+        }}
+      />
+      {/* Overlay with subtle pattern */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "220px",
+          bgcolor: "#00A884",
+          zIndex: 1,
         }}
       />
     </>

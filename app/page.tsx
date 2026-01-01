@@ -8,14 +8,16 @@ import { Box } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeView } from "@/components/dashboard/WelcomeView";
+import { ChatView } from "@/components/chat/ChatView";
 import { NewChatModal } from "@/components/modals/NewChatModal";
 
-const DRAWER_WIDTH = 320;
+const DRAWER_WIDTH = 400;
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,15 +31,29 @@ export default function Home() {
 
   if (!user) return null;
 
+  const handleSelectChat = (chatId: string) => {
+    setSelectedChatId(chatId);
+  };
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>
       <DashboardSidebar 
         user={user} 
         onLogout={() => logout()} 
         onNewChat={() => setIsNewChatOpen(true)}
-        width={DRAWER_WIDTH} 
+        width={DRAWER_WIDTH}
+        onSelectChat={handleSelectChat}
+        selectedChatId={selectedChatId || undefined}
       />
-      <WelcomeView onNewChat={() => setIsNewChatOpen(true)} />
+      
+      {selectedChatId ? (
+        <ChatView 
+          chatId={selectedChatId} 
+          onBack={() => setSelectedChatId(null)}
+        />
+      ) : (
+        <WelcomeView onNewChat={() => setIsNewChatOpen(true)} />
+      )}
       
       <NewChatModal 
         open={isNewChatOpen} 
@@ -46,7 +62,3 @@ export default function Home() {
     </Box>
   );
 }
-
-
-
-

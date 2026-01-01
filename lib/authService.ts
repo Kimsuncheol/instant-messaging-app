@@ -1,14 +1,17 @@
 import { 
-  GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged,
-  User
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  User,
+  GoogleAuthProvider
 } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const googleProvider = new GoogleAuthProvider();
+
 
 export const signInWithGoogle = async () => {
   try {
@@ -30,6 +33,38 @@ export const signInWithGoogle = async () => {
     throw error;
   }
 };
+
+
+export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const user = result.user;
+    
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      displayName,
+      email,
+      photoURL: null,
+      lastSeen: serverTimestamp(),
+    });
+    
+    return user;
+  } catch (error) {
+    console.error("Error signing up with email", error);
+    throw error;
+  }
+};
+
+export const signInWithEmail = async (email: string, password: string) => {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error("Error signing in with email", error);
+    throw error;
+  }
+};
+
 
 export const logout = () => signOut(auth);
 

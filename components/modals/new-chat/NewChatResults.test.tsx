@@ -7,6 +7,16 @@ const mockUsers = [
   { uid: '2', displayName: 'Jane Smith', email: 'jane@example.com', photoURL: '' },
 ];
 
+const mockSubscribe = vi.fn();
+
+vi.mock('@/lib/presenceService', () => ({
+  subscribeToMultiplePresences: (userIds: string[], cb: (data: any) => void) => {
+    mockSubscribe(userIds, cb);
+    return vi.fn();
+  },
+}));
+
+
 describe('NewChatResults', () => {
   it('renders loading state', () => {
     render(<NewChatResults loading={true} users={[]} searchTerm="" onSelectUser={() => {}} />);

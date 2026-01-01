@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Modal, Box } from "@mui/material";
+import { Modal, Box, Slide } from "@mui/material";
 import { UserProfile, searchUsers } from "@/lib/userService";
 import { createPrivateChat } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
@@ -14,21 +14,6 @@ interface NewChatModalProps {
   open: boolean;
   onClose: () => void;
 }
-
-const modalStyle = {
-  position: 'absolute' as const,
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '16px',
-  boxShadow: 24,
-  p: 4,
-  outline: 'none',
-  backdropFilter: 'blur(10px)',
-};
 
 export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => {
   const { user: currentUser } = useAuth();
@@ -69,19 +54,47 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
     }
   };
 
+  const handleClose = () => {
+    setSearchTerm("");
+    setUsers([]);
+    onClose();
+  };
+
   return (
-    <Modal open={open} onClose={onClose}>
-      <Box sx={modalStyle}>
-        <NewChatHeader onClose={onClose} />
-        <NewChatSearch value={searchTerm} onChange={setSearchTerm} />
-        <NewChatResults 
-          loading={loading} 
-          users={users} 
-          searchTerm={searchTerm} 
-          onSelectUser={handleStartChat} 
-        />
-      </Box>
+    <Modal 
+      open={open} 
+      onClose={handleClose}
+      sx={{
+        '& .MuiBackdrop-root': {
+          bgcolor: 'rgba(0, 0, 0, 0.6)',
+        },
+      }}
+    >
+      <Slide direction="left" in={open} mountOnEnter unmountOnExit>
+        <Box 
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: 400,
+            height: '100vh',
+            bgcolor: '#111B21',
+            outline: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 0 30px rgba(0,0,0,0.3)',
+          }}
+        >
+          <NewChatHeader onClose={handleClose} />
+          <NewChatSearch value={searchTerm} onChange={setSearchTerm} />
+          <NewChatResults 
+            loading={loading} 
+            users={users} 
+            searchTerm={searchTerm} 
+            onSelectUser={handleStartChat} 
+          />
+        </Box>
+      </Slide>
     </Modal>
   );
 };
-

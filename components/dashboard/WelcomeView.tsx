@@ -1,15 +1,14 @@
 "use client";
 
 import React from "react";
-import { Box, Paper, Typography, Button } from "@mui/material";
-import { QuestionAnswer as ChatIcon, Add as AddIcon } from "@mui/icons-material";
+import { Box, Typography, Button } from "@mui/material";
+import { WhatsApp as WhatsAppIcon, LockOutlined as LockIcon } from "@mui/icons-material";
 
 interface WelcomeViewProps {
   onNewChat: () => void;
 }
 
 export const WelcomeView: React.FC<WelcomeViewProps> = ({ onNewChat }) => {
-
   return (
     <Box 
       component="main" 
@@ -19,63 +18,93 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onNewChat }) => {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
+        bgcolor: '#222E35',
         position: 'relative',
-        overflow: 'hidden'
       }}
     >
-      <Box 
-        sx={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '500px',
-          height: '500px',
-          bgcolor: 'primary.main',
-          opacity: 0.1,
-          filter: 'blur(120px)',
-          borderRadius: '50%',
-        }} 
-      />
-      
-      <Box sx={{ zIndex: 1, textAlign: 'center' }}>
-        <Paper 
-          elevation={24}
+      {/* Main Content */}
+      <Box sx={{ textAlign: 'center', maxWidth: 560, px: 4 }}>
+        {/* WhatsApp Logo */}
+        <Box 
           sx={{ 
-            width: 80, 
-            height: 80, 
-            background: 'linear-gradient(to bottom right, #6366f1, #a855f7)', 
-            borderRadius: '24px',
+            width: 320,
+            height: 188,
             mx: 'auto',
+            mb: 4,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            mb: 4,
-            boxShadow: '0 20px 40px rgba(99, 102, 241, 0.2)'
           }}
         >
-          <ChatIcon sx={{ fontSize: 40, color: 'white' }} />
-        </Paper>
-        <Typography variant="h4" fontWeight={600} mb={1}>
-          Select a conversation
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 300, mx: 'auto', mb: 4 }}>
-          Choose a contact from the sidebar or start a new chat to begin messaging with AI power.
-        </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={onNewChat}
+          <WhatsAppIcon 
+            sx={{ 
+              fontSize: 140, 
+              color: '#364147',
+            }} 
+          />
+        </Box>
+
+        <Typography 
+          variant="h4" 
           sx={{ 
-            px: 4, 
-            py: 1.2, 
-            borderRadius: '100px',
-            boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)'
+            color: '#E9EDEF',
+            fontWeight: 300,
+            fontSize: '2rem',
+            mb: 2,
           }}
         >
-          New Message
+          WhatsApp Web
+        </Typography>
+        
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: '#8696A0',
+            lineHeight: 1.6,
+            mb: 4,
+          }}
+        >
+          Send and receive messages without keeping your phone online.
+          <br />
+          Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+        </Typography>
+
+        <Button
+          variant="contained"
+          onClick={onNewChat}
+          sx={{
+            bgcolor: '#00A884',
+            color: '#111B21',
+            px: 4,
+            py: 1.25,
+            borderRadius: '24px',
+            textTransform: 'none',
+            fontWeight: 500,
+            fontSize: '0.9375rem',
+            '&:hover': {
+              bgcolor: '#008069',
+            },
+          }}
+        >
+          Start a new chat
         </Button>
+      </Box>
+
+      {/* Footer */}
+      <Box 
+        sx={{ 
+          position: 'absolute',
+          bottom: 32,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
+          color: '#8696A0',
+        }}
+      >
+        <LockIcon sx={{ fontSize: 14 }} />
+        <Typography variant="caption" sx={{ fontSize: '0.8125rem' }}>
+          End-to-end encrypted
+        </Typography>
       </Box>
     </Box>
   );

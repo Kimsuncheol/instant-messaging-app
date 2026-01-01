@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TextField } from "@mui/material";
+import { Box, TextField, InputAdornment } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 
 interface NewChatSearchProps {
@@ -11,17 +11,38 @@ interface NewChatSearchProps {
 
 export const NewChatSearch: React.FC<NewChatSearchProps> = ({ value, onChange }) => {
   return (
-    <TextField
-      fullWidth
-      size="small"
-      placeholder="Search by email or name..."
-      variant="outlined"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      InputProps={{
-        startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
-      }}
-      sx={{ mb: 2 }}
-    />
+    <Box sx={{ px: 2, py: 1.5, bgcolor: '#111B21' }}>
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="Search name or email"
+        variant="outlined"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: '#8696A0', fontSize: 20 }} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            bgcolor: '#202C33',
+            borderRadius: '8px',
+            '& fieldset': { border: 'none' },
+            '& input': {
+              color: '#E9EDEF',
+              fontSize: '0.9375rem',
+              py: 1,
+              '&::placeholder': {
+                color: '#8696A0',
+                opacity: 1,
+              },
+            },
+          },
+        }}
+      />
+    </Box>
   );
 };

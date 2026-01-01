@@ -1,5 +1,6 @@
 import { db } from "./firebase";
-import { collection, query, where, getDocs, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
+
 
 export interface UserProfile {
   uid: string;
@@ -45,3 +46,11 @@ export const searchUsers = async (searchTerm: string): Promise<UserProfile[]> =>
   return Array.from(userMap.values()).slice(0, 10);
 };
 
+export const getUserById = async (userId: string): Promise<UserProfile | null> => {
+  const userRef = doc(db, "users", userId);
+  const userDoc = await getDoc(userRef);
+  
+  if (!userDoc.exists()) return null;
+  
+  return userDoc.data() as UserProfile;
+};

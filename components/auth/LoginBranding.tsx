@@ -2,24 +2,46 @@
 
 import React from "react";
 import { Box, Typography, Fade } from "@mui/material";
+import { WhatsApp } from "@mui/icons-material";
 
 export const LoginBranding: React.FC = () => {
   return (
-    <Fade in timeout={1000}>
-      <Box textAlign="center" mb={6}>
-        <Typography 
-          variant="h1" 
+    <Fade in timeout={800}>
+      <Box textAlign="center" mb={4}>
+        <Box 
           sx={{ 
-            fontSize: { xs: '3rem', md: '4rem' },
-            background: 'linear-gradient(to bottom right, #ffffff, #71717a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            mb: 2,
           }}
         >
-          Aura
+          <WhatsApp 
+            sx={{ 
+              fontSize: 56, 
+              color: '#25D366',
+            }} 
+          />
+        </Box>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            color: '#E9EDEF',
+            fontWeight: 300,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          WhatsApp
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.125rem', mt: 1 }}>
-          Experience messaging, redefined with AI.
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            color: '#8696A0',
+            mt: 1,
+          }}
+        >
+          Simple. Secure. Reliable messaging.
         </Typography>
       </Box>
     </Fade>

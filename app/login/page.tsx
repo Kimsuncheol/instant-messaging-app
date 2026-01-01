@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signInWithGoogle } from "@/lib/authService";
+import { signInWithGoogle, signInWithEmail } from "@/lib/authService";
 import { useAuth } from "@/context/AuthContext";
+
 import { useRouter } from "next/navigation";
 import { Box, Container } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
@@ -21,14 +22,24 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to sign in. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in with Google.";
       setError(errorMessage);
     }
   };
+
+  const handleEmailLogin = async (email: string, pass: string) => {
+    try {
+      await signInWithEmail(email, pass);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in with email.";
+      setError(errorMessage);
+    }
+  };
+
 
   if (loading) {
     return <LoadingScreen />;
@@ -52,8 +63,13 @@ export default function LoginPage() {
       
       <Container maxWidth="xs" sx={{ zIndex: 10 }}>
         <LoginBranding />
-        <LoginCard onLogin={handleLogin} error={error} />
+        <LoginCard 
+          onGoogleLogin={handleGoogleLogin} 
+          onEmailLogin={handleEmailLogin} 
+          error={error} 
+        />
       </Container>
+
     </Box>
   );
 }
