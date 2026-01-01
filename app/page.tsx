@@ -10,6 +10,8 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeView } from "@/components/dashboard/WelcomeView";
 import { ChatView } from "@/components/chat/ChatView";
 import { NewChatModal } from "@/components/modals/NewChatModal";
+import { useChatStore } from "@/store/chatStore";
+
 
 const DRAWER_WIDTH = 400;
 
@@ -17,7 +19,8 @@ export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const selectedChatId = useChatStore((state) => state.selectedChatId);
+  const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,6 +37,7 @@ export default function Home() {
   const handleSelectChat = (chatId: string) => {
     setSelectedChatId(chatId);
   };
+
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>

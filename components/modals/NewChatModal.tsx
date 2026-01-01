@@ -5,8 +5,9 @@ import { Modal, Box, Slide } from "@mui/material";
 import { UserProfile, searchUsers } from "@/lib/userService";
 import { createPrivateChat } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useChatStore } from "@/store/chatStore";
 import { NewChatHeader } from "./new-chat/NewChatHeader";
+
 import { NewChatSearch } from "./new-chat/NewChatSearch";
 import { NewChatResults } from "./new-chat/NewChatResults";
 
@@ -17,7 +18,7 @@ interface NewChatModalProps {
 
 export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => {
   const { user: currentUser } = useAuth();
-  const router = useRouter();
+  const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,12 +48,13 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
     if (!currentUser) return;
     try {
       const chatId = await createPrivateChat(currentUser.uid, otherUserId);
+      setSelectedChatId(chatId);
       onClose();
-      router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error("Error starting chat", error);
     }
   };
+
 
   const handleClose = () => {
     setSearchTerm("");
