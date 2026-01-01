@@ -2,18 +2,20 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { logout } from "@/lib/authService";
 import { Box } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeView } from "@/components/dashboard/WelcomeView";
+import { NewChatModal } from "@/components/modals/NewChatModal";
 
 const DRAWER_WIDTH = 320;
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -32,12 +34,19 @@ export default function Home() {
       <DashboardSidebar 
         user={user} 
         onLogout={() => logout()} 
+        onNewChat={() => setIsNewChatOpen(true)}
         width={DRAWER_WIDTH} 
       />
-      <WelcomeView />
+      <WelcomeView onNewChat={() => setIsNewChatOpen(true)} />
+      
+      <NewChatModal 
+        open={isNewChatOpen} 
+        onClose={() => setIsNewChatOpen(false)} 
+      />
     </Box>
   );
 }
+
 
 
 

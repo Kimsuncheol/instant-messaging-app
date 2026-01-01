@@ -10,10 +10,11 @@ import { User } from "firebase/auth";
 interface DashboardSidebarProps {
   user: User;
   onLogout: () => void;
+  onNewChat: () => void;
   width: number;
 }
 
-export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, onLogout, width }) => {
+export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, onLogout, onNewChat, width }) => {
   return (
     <Drawer
       variant="permanent"
@@ -27,7 +28,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, onLogo
         },
       }}
     >
-      <SidebarHeader onLogout={onLogout} />
+      <SidebarHeader onLogout={onLogout} onNewChat={onNewChat} />
+
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
       <SidebarChatList />
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />

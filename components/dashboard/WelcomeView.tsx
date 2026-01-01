@@ -4,7 +4,12 @@ import React from "react";
 import { Box, Paper, Typography, Button } from "@mui/material";
 import { QuestionAnswer as ChatIcon, Add as AddIcon } from "@mui/icons-material";
 
-export const WelcomeView: React.FC = () => {
+interface WelcomeViewProps {
+  onNewChat: () => void;
+}
+
+export const WelcomeView: React.FC<WelcomeViewProps> = ({ onNewChat }) => {
+
   return (
     <Box 
       component="main" 
@@ -61,6 +66,7 @@ export const WelcomeView: React.FC = () => {
           variant="contained" 
           color="primary" 
           startIcon={<AddIcon />}
+          onClick={onNewChat}
           sx={{ 
             px: 4, 
             py: 1.2, 
