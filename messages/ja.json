@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "設定",
+    "profile": "プロフィール",
+    "appearance": "外観",
+    "language": "言語",
+    "notifications": "通知",
+    "privacy": "プライバシー",
+    "security": "セキュリティ",
+    "storage": "ストレージとデータ",
+    "help": "ヘルプ",
+    "keyboard": "キーボードショートカット"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システムデフォルト"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "プロフィール",
+    "yourName": "名前",
+    "about": "情報",
+    "nameHelper": "この名前は連絡先に表示されます。"
+  },
+  "common": {
+    "back": "戻る",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "削除"
+  },
+  "chat": {
+    "forwarded": "転送済み",
+    "edited": "編集済み",
+    "deleted": "このメッセージは削除されました"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "メッセージ、グループ、通話の着信音",
+    "privacyDesc": "連絡先のブロック、消えるメッセージ",
+    "securityDesc": "セキュリティ通知、リンクされたデバイス",
+    "storageDesc": "ネットワーク使用量、自動ダウンロード",
+    "helpDesc": "ヘルプセンター、お問い合わせ、プライバシーポリシー"
+  }
+}

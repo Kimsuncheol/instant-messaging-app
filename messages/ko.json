@@ -18,7 +18,15 @@
   },
   "locale": {
     "english": "English",
-    "korean": "한국어"
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
   },
   "profile": {
     "title": "프로필",

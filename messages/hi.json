@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "सेटिंग्स",
+    "profile": "प्रोफ़ाइल",
+    "appearance": "दिखावट",
+    "language": "भाषा",
+    "notifications": "सूचनाएं",
+    "privacy": "गोपनीयता",
+    "security": "सुरक्षा",
+    "storage": "स्टोरेज और डेटा",
+    "help": "सहायता",
+    "keyboard": "कीबोर्ड शॉर्टकट"
+  },
+  "theme": {
+    "light": "लाइट",
+    "dark": "डार्क",
+    "system": "सिस्टम डिफ़ॉल्ट"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "yourName": "आपका नाम",
+    "about": "जानकारी",
+    "nameHelper": "यह नाम आपके संपर्कों को दिखाई देगा।"
+  },
+  "common": {
+    "back": "वापस",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं"
+  },
+  "chat": {
+    "forwarded": "अग्रेषित",
+    "edited": "संपादित",
+    "deleted": "यह संदेश हटा दिया गया था"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "संदेश, समूह और कॉल टोन",
+    "privacyDesc": "संपर्कों को ब्लॉक करें, गायब होने वाले संदेश",
+    "securityDesc": "सुरक्षा सूचनाएं, लिंक किए गए डिवाइस",
+    "storageDesc": "नेटवर्क उपयोग, ऑटो-डाउनलोड",
+    "helpDesc": "सहायता केंद्र, हमसे संपर्क करें, गोपनीयता नीति"
+  }
+}

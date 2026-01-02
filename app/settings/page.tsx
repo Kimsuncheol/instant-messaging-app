@@ -156,7 +156,7 @@ export default function SettingsPage() {
         </Typography>
         <RadioGroup 
           value={locale} 
-          onChange={(e) => setLocale(e.target.value as "en" | "ko")}
+          onChange={(e) => setLocale(e.target.value as "en" | "ko" | "es" | "fr" | "zh" | "ja" | "hi" | "de" | "it" | "ru")}
         >
           <FormControlLabel 
             value="en" 
@@ -175,6 +175,86 @@ export default function SettingsPage() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <LanguageIcon sx={{ color: textSecondary }} />
                 <Typography sx={{ color: textPrimary }}>{t('locale.korean')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="es" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.spanish')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="fr" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.french')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="zh" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.chinese')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="ja" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.japanese')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="hi" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.hindi')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="de" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.german')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="it" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.italian')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="ru" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.russian')}</Typography>
               </Box>
             }
           />

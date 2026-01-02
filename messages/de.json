@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "Einstellungen",
+    "profile": "Profil",
+    "appearance": "Erscheinungsbild",
+    "language": "Sprache",
+    "notifications": "Benachrichtigungen",
+    "privacy": "Datenschutz",
+    "security": "Sicherheit",
+    "storage": "Speicher und Daten",
+    "help": "Hilfe",
+    "keyboard": "Tastenkombinationen"
+  },
+  "theme": {
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "Systemstandard"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "Profil",
+    "yourName": "Ihr Name",
+    "about": "Info",
+    "nameHelper": "Dieser Name wird Ihren Kontakten angezeigt."
+  },
+  "common": {
+    "back": "Zurück",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "chat": {
+    "forwarded": "Weitergeleitet",
+    "edited": "bearbeitet",
+    "deleted": "Diese Nachricht wurde gelöscht"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "Nachricht-, Gruppen- und Anruftöne",
+    "privacyDesc": "Kontakte blockieren, verschwindende Nachrichten",
+    "securityDesc": "Sicherheitsbenachrichtigungen, verknüpfte Geräte",
+    "storageDesc": "Netzwerknutzung, automatischer Download",
+    "helpDesc": "Hilfecenter, Kontakt, Datenschutzrichtlinie"
+  }
+}

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-type Locale = "en" | "ko";
+type Locale = "en" | "ko" | "es" | "fr" | "zh" | "ja" | "hi" | "de" | "it" | "ru";
 
 interface LocaleContextType {
   locale: Locale;
@@ -16,7 +16,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     // Initialize from localStorage on mount
     if (typeof window !== "undefined") {
       const savedLocale = localStorage.getItem("locale") as Locale | null;
-      if (savedLocale && (savedLocale === "en" || savedLocale === "ko")) {
+      const validLocales: Locale[] = ["en", "ko", "es", "fr", "zh", "ja", "hi", "de", "it", "ru"];
+      if (savedLocale && validLocales.includes(savedLocale)) {
         return savedLocale;
       }
     }

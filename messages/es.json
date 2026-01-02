@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "Configuración",
+    "profile": "Perfil",
+    "appearance": "Apariencia",
+    "language": "Idioma",
+    "notifications": "Notificaciones",
+    "privacy": "Privacidad",
+    "security": "Seguridad",
+    "storage": "Almacenamiento y datos",
+    "help": "Ayuda",
+    "keyboard": "Atajos de teclado"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema predeterminado"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "Perfil",
+    "yourName": "Tu nombre",
+    "about": "Información",
+    "nameHelper": "Este nombre será visible para tus contactos."
+  },
+  "common": {
+    "back": "Atrás",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "chat": {
+    "forwarded": "Reenviado",
+    "edited": "editado",
+    "deleted": "Este mensaje fue eliminado"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "Tonos de mensajes, grupos y llamadas",
+    "privacyDesc": "Bloquear contactos, mensajes temporales",
+    "securityDesc": "Notificaciones de seguridad, dispositivos vinculados",
+    "storageDesc": "Uso de red, descarga automática",
+    "helpDesc": "Centro de ayuda, contáctanos, política de privacidad"
+  }
+}

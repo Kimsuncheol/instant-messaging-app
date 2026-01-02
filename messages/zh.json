@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "设置",
+    "profile": "个人资料",
+    "appearance": "外观",
+    "language": "语言",
+    "notifications": "通知",
+    "privacy": "隐私",
+    "security": "安全",
+    "storage": "存储和数据",
+    "help": "帮助",
+    "keyboard": "键盘快捷键"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统默认"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "个人资料",
+    "yourName": "您的姓名",
+    "about": "关于",
+    "nameHelper": "此名称将对您的联系人可见。"
+  },
+  "common": {
+    "back": "返回",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除"
+  },
+  "chat": {
+    "forwarded": "已转发",
+    "edited": "已编辑",
+    "deleted": "此消息已删除"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "消息、群组和通话铃声",
+    "privacyDesc": "屏蔽联系人、阅后即焚消息",
+    "securityDesc": "安全通知、关联设备",
+    "storageDesc": "网络使用、自动下载",
+    "helpDesc": "帮助中心、联系我们、隐私政策"
+  }
+}

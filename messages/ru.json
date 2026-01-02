@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "title": "Настройки",
+    "profile": "Профиль",
+    "appearance": "Оформление",
+    "language": "Язык",
+    "notifications": "Уведомления",
+    "privacy": "Конфиденциальность",
+    "security": "Безопасность",
+    "storage": "Хранилище и данные",
+    "help": "Помощь",
+    "keyboard": "Сочетания клавиш"
+  },
+  "theme": {
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "system": "Системная"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어",
+    "spanish": "Español",
+    "french": "Français",
+    "chinese": "中文",
+    "japanese": "日本語",
+    "hindi": "हिन्दी",
+    "german": "Deutsch",
+    "italian": "Italiano",
+    "russian": "Русский"
+  },
+  "profile": {
+    "title": "Профиль",
+    "yourName": "Ваше имя",
+    "about": "О себе",
+    "nameHelper": "Это имя будет видно вашим контактам."
+  },
+  "common": {
+    "back": "Назад",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "edit": "Изменить",
+    "delete": "Удалить"
+  },
+  "chat": {
+    "forwarded": "Переслано",
+    "edited": "изменено",
+    "deleted": "Это сообщение было удалено"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "Звуки сообщений, групп и звонков",
+    "privacyDesc": "Блокировка контактов, исчезающие сообщения",
+    "securityDesc": "Уведомления безопасности, связанные устройства",
+    "storageDesc": "Использование сети, автозагрузка",
+    "helpDesc": "Центр помощи, связаться с нами, политика конфиденциальности"
+  }
+}
