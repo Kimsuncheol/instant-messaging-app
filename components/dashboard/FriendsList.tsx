@@ -266,7 +266,7 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
                     )}
                   </Box>
                 }
-                secondary={profile?.email}
+                secondary={profile?.about || "Hey there! I am using WhatsApp."}
                 primaryTypographyProps={{
                   sx: { color: "#E9EDEF", fontWeight: 500 },
                 }}

@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { DeviceProvider } from "@/context/DeviceContext";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { LocaleProvider } from "@/context/LocaleContext";
+import { IntlProvider } from "@/components/providers/IntlProvider";
 
 
 const geistSans = Geist({
@@ -31,13 +33,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeRegistry>
-          <DeviceProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </DeviceProvider>
-        </ThemeRegistry>
+        <LocaleProvider>
+          <IntlProvider>
+            <ThemeRegistry>
+              <DeviceProvider>
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
+              </DeviceProvider>
+            </ThemeRegistry>
+          </IntlProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

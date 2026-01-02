@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "appearance": "Appearance",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "security": "Security",
+    "storage": "Storage and data",
+    "help": "Help",
+    "keyboard": "Keyboard shortcuts"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System default"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어"
+  },
+  "profile": {
+    "title": "Profile",
+    "yourName": "Your name",
+    "about": "About",
+    "nameHelper": "This name will be visible to your contacts."
+  },
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "chat": {
+    "forwarded": "Forwarded",
+    "edited": "edited",
+    "deleted": "This message was deleted"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "Message, group & call tones",
+    "privacyDesc": "Block contacts, disappearing messages",
+    "securityDesc": "Security notifications, linked devices",
+    "storageDesc": "Network usage, auto-download",
+    "helpDesc": "Help centre, contact us, privacy policy"
+  }
+}

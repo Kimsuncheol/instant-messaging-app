@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "title": "설정",
+    "profile": "프로필",
+    "appearance": "테마",
+    "language": "언어",
+    "notifications": "알림",
+    "privacy": "개인정보",
+    "security": "보안",
+    "storage": "저장공간 및 데이터",
+    "help": "도움말",
+    "keyboard": "키보드 단축키"
+  },
+  "theme": {
+    "light": "라이트",
+    "dark": "다크",
+    "system": "시스템 기본값"
+  },
+  "locale": {
+    "english": "English",
+    "korean": "한국어"
+  },
+  "profile": {
+    "title": "프로필",
+    "yourName": "이름",
+    "about": "정보",
+    "nameHelper": "이 이름은 연락처에 표시됩니다."
+  },
+  "common": {
+    "back": "뒤로",
+    "save": "저장",
+    "cancel": "취소",
+    "edit": "편집",
+    "delete": "삭제"
+  },
+  "chat": {
+    "forwarded": "전달됨",
+    "edited": "편집됨",
+    "deleted": "삭제된 메시지입니다"
+  },
+  "settingsDetails": {
+    "notificationsDesc": "메시지, 그룹 및 통화 알림음",
+    "privacyDesc": "연락처 차단, 사라지는 메시지",
+    "securityDesc": "보안 알림, 연결된 기기",
+    "storageDesc": "네트워크 사용량, 자동 다운로드",
+    "helpDesc": "고객센터, 문의하기, 개인정보 보호정책"
+  }
+}

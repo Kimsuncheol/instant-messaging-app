@@ -2,16 +2,14 @@
 
 import React from "react";
 import { 
-  Box, 
-  List, 
-  ListItem, 
+  Box,
+  List,
   ListItemButton, 
   ListItemIcon, 
   ListItemText,
   Typography,
   Avatar,
   Divider,
-  Switch,
   Radio,
   RadioGroup,
   FormControlLabel,
@@ -22,23 +20,27 @@ import {
   Notifications as NotificationsIcon,
   Lock as PrivacyIcon,
   Security as SecurityIcon,
-  Palette as ThemeIcon,
   Storage as StorageIcon,
   Help as HelpIcon,
   Keyboard as KeyboardIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   SettingsBrightness as SystemIcon,
+  Language as LanguageIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
+import { useLocale } from "@/context/LocaleContext";
+import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { mode, setMode, resolvedMode } = useTheme();
+  const { locale, setLocale } = useLocale();
+  const t = useTranslations();
 
   if (loading) return <LoadingScreen />;
   if (!user) {
@@ -70,7 +72,7 @@ export default function SettingsPage() {
           <BackIcon />
         </IconButton>
         <Typography variant="h6" sx={{ color: "#FFFFFF", fontWeight: 500 }}>
-          Settings
+          {t('settings.title')}
         </Typography>
       </Box>
 
@@ -103,7 +105,7 @@ export default function SettingsPage() {
           variant="overline" 
           sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem" }}
         >
-          Appearance
+          {t('settings.appearance')}
         </Typography>
         <RadioGroup 
           value={mode} 
@@ -115,7 +117,7 @@ export default function SettingsPage() {
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <LightModeIcon sx={{ color: textSecondary }} />
-                <Typography sx={{ color: textPrimary }}>Light</Typography>
+                <Typography sx={{ color: textPrimary }}>{t('theme.light')}</Typography>
               </Box>
             }
           />
@@ -125,7 +127,7 @@ export default function SettingsPage() {
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <DarkModeIcon sx={{ color: textSecondary }} />
-                <Typography sx={{ color: textPrimary }}>Dark</Typography>
+                <Typography sx={{ color: textPrimary }}>{t('theme.dark')}</Typography>
               </Box>
             }
           />
@@ -135,7 +137,44 @@ export default function SettingsPage() {
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <SystemIcon sx={{ color: textSecondary }} />
-                <Typography sx={{ color: textPrimary }}>System default</Typography>
+                <Typography sx={{ color: textPrimary }}>{t('theme.system')}</Typography>
+              </Box>
+            }
+          />
+        </RadioGroup>
+      </Box>
+
+      <Divider sx={{ borderColor: dividerColor }} />
+
+      {/* Language Section */}
+      <Box sx={{ px: 3, py: 2 }}>
+        <Typography 
+          variant="overline" 
+          sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem" }}
+        >
+          {t('settings.language')}
+        </Typography>
+        <RadioGroup 
+          value={locale} 
+          onChange={(e) => setLocale(e.target.value as "en" | "ko")}
+        >
+          <FormControlLabel 
+            value="en" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.english')}</Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel 
+            value="ko" 
+            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LanguageIcon sx={{ color: textSecondary }} />
+                <Typography sx={{ color: textPrimary }}>{t('locale.korean')}</Typography>
               </Box>
             }
           />
@@ -151,8 +190,8 @@ export default function SettingsPage() {
             <NotificationsIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Notifications"
-            secondary="Message, group & call tones"
+            primary={t('settings.notifications')}
+            secondary={t('settingsDetails.notificationsDesc')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
             secondaryTypographyProps={{ sx: { color: textSecondary } }}
           />
@@ -163,8 +202,8 @@ export default function SettingsPage() {
             <PrivacyIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Privacy"
-            secondary="Block contacts, disappearing messages"
+            primary={t('settings.privacy')}
+            secondary={t('settingsDetails.privacyDesc')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
             secondaryTypographyProps={{ sx: { color: textSecondary } }}
           />
@@ -175,8 +214,8 @@ export default function SettingsPage() {
             <SecurityIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Security"
-            secondary="Security notifications, linked devices"
+            primary={t('settings.security')}
+            secondary={t('settingsDetails.securityDesc')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
             secondaryTypographyProps={{ sx: { color: textSecondary } }}
           />
@@ -187,8 +226,8 @@ export default function SettingsPage() {
             <StorageIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Storage and data"
-            secondary="Network usage, auto-download"
+            primary={t('settings.storage')}
+            secondary={t('settingsDetails.storageDesc')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
             secondaryTypographyProps={{ sx: { color: textSecondary } }}
           />
@@ -199,8 +238,8 @@ export default function SettingsPage() {
             <HelpIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Help"
-            secondary="Help centre, contact us, privacy policy"
+            primary={t('settings.help')}
+            secondary={t('settingsDetails.helpDesc')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
             secondaryTypographyProps={{ sx: { color: textSecondary } }}
           />
@@ -211,7 +250,7 @@ export default function SettingsPage() {
             <KeyboardIcon sx={{ color: textSecondary }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Keyboard shortcuts"
+            primary={t('settings.keyboard')}
             primaryTypographyProps={{ sx: { color: textPrimary } }}
           />
         </ListItemButton>
