@@ -11,7 +11,7 @@ interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
   totalParticipants?: number;
-  onLongPress?: (message: Message) => void;
+  onLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onClick?: (message: Message) => void;
 }
 
@@ -26,7 +26,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    onLongPress?.(message);
+    onLongPress?.(message, e);
   };
 
   // Determine read status for own messages

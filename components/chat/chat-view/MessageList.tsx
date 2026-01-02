@@ -1,16 +1,65 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import { Box } from "@mui/material";
+import React, { useRef, useEffect, useMemo } from "react";
+import { Box, Chip } from "@mui/material";
 import { Message } from "@/lib/chatService";
 import { MessageBubble } from "./MessageBubble";
+import { useDateFormat } from "@/context/DateFormatContext";
+import { Timestamp } from "firebase/firestore";
 
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
-  onMessageLongPress?: (message: Message) => void;
+  onMessageLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onMessageClick?: (message: Message) => void;
 }
+
+// Helper to get date key from timestamp
+const getDateKey = (timestamp: Timestamp | null): string => {
+  if (!timestamp) return "unknown";
+  const date = timestamp.toDate();
+  return date.toDateString();
+};
+
+const DateSeparator: React.FC<{ dateKey: string }> = ({ dateKey }) => {
+  const date = new Date(dateKey);
+  
+  const now = new Date();
+  const isToday = dateKey === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = dateKey === yesterday.toDateString();
+  
+  let label: string;
+  if (isToday) {
+    label = "Today";
+  } else if (isYesterday) {
+    label = "Yesterday";
+  } else {
+    // Format date nicely
+    label = date.toLocaleDateString(undefined, { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }
+  
+  return (
+    <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+      <Chip
+        label={label}
+        size="small"
+        sx={{
+          bgcolor: "#182229",
+          color: "#8696A0",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          px: 1,
+        }}
+      />
+    </Box>
+  );
+};
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
@@ -19,6 +68,26 @@ export const MessageList: React.FC<MessageListProps> = ({
   onMessageClick,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { formatRelativeTime } = useDateFormat();
+
+  // Group messages by date
+  const messagesWithSeparators = useMemo(() => {
+    const result: { type: "separator" | "message"; data: string | Message }[] = [];
+    let lastDateKey = "";
+
+    messages.forEach((msg) => {
+      const dateKey = getDateKey(msg.createdAt);
+      
+      if (dateKey !== lastDateKey) {
+        result.push({ type: "separator", data: dateKey });
+        lastDateKey = dateKey;
+      }
+      
+      result.push({ type: "message", data: msg });
+    });
+
+    return result;
+  }, [messages]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -37,15 +106,27 @@ export const MessageList: React.FC<MessageListProps> = ({
         bgcolor: "#0B141A",
       }}
     >
-      {messages.map((msg) => (
-        <MessageBubble
-          key={msg.id}
-          message={msg}
-          isOwn={msg.senderId === currentUserId}
-          onLongPress={onMessageLongPress}
-          onClick={onMessageClick}
-        />
-      ))}
+      {messagesWithSeparators.map((item) => {
+        if (item.type === "separator") {
+          return (
+            <DateSeparator 
+              key={`sep-${item.data}`} 
+              dateKey={item.data as string}
+            />
+          );
+        }
+        
+        const msg = item.data as Message;
+        return (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            isOwn={msg.senderId === currentUserId}
+            onLongPress={onMessageLongPress}
+            onClick={onMessageClick}
+          />
+        );
+      })}
       <div ref={messagesEndRef} />
     </Box>
   );

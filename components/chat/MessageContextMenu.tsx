@@ -15,14 +15,17 @@ import {
   TextField,
   Box,
   IconButton,
+  Typography,
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Reply as ForwardIcon,
   ContentCopy as CopyIcon,
+  Translate as TranslateIcon,
 } from "@mui/icons-material";
 import { Message, editMessage, deleteMessage, addReaction } from "@/lib/chatService";
+import { useLocale } from "@/context/LocaleContext";
 
 // Common emoji reactions
 const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -46,6 +49,9 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editText, setEditText] = useState("");
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const { locale } = useLocale();
 
   if (!message) return null;
 
@@ -85,6 +91,37 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   const handleForward = () => {
     onForward?.(message);
     onClose();
+  };
+
+  // Translation using free API
+  const handleTranslate = async () => {
+    if (translating) return;
+    
+    setTranslating(true);
+    try {
+      // Use MyMemory API (free, no API key needed)
+      const langMap: Record<string, string> = {
+        en: "en", ko: "ko", es: "es", fr: "fr",
+        zh: "zh-CN", ja: "ja", hi: "hi", de: "de", it: "it", ru: "ru"
+      };
+      const targetLang = langMap[locale] || "en";
+      
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(message.text)}&langpair=auto|${targetLang}`
+      );
+      const data = await response.json();
+      
+      if (data.responseData?.translatedText) {
+        setTranslatedText(data.responseData.translatedText);
+      } else {
+        setTranslatedText("Translation unavailable");
+      }
+    } catch (error) {
+      console.error("Translation error:", error);
+      setTranslatedText("Translation failed");
+    } finally {
+      setTranslating(false);
+    }
   };
 
   return (
@@ -141,6 +178,28 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           </ListItemIcon>
           <ListItemText>Forward</ListItemText>
         </MenuItem>
+
+        {/* Translate */}
+        <MenuItem 
+          onClick={handleTranslate}
+          disabled={translating}
+          sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
+        >
+          <ListItemIcon>
+            <TranslateIcon sx={{ color: "#AEBAC1" }} />
+          </ListItemIcon>
+          <ListItemText>{translating ? "Translating..." : "Translate"}</ListItemText>
+        </MenuItem>
+
+        {/* Show Translated Text */}
+        {translatedText && (
+          <Box sx={{ px: 2, py: 1.5, bgcolor: "#182229", mx: 1, borderRadius: 1, mb: 1 }}>
+            <Typography variant="caption" sx={{ color: "#8696A0" }}>Translation:</Typography>
+            <Typography sx={{ color: "#E9EDEF", fontSize: "0.875rem" }}>
+              {translatedText}
+            </Typography>
+          </Box>
+        )}
 
         {/* Edit (own messages only) */}
         {canEdit && (
