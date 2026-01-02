@@ -4,19 +4,16 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { logout } from "@/lib/authService";
-import { markAllChatsAsRead } from "@/lib/chatService";
 import { subscribeToFriendRequests, FriendRequest } from "@/lib/friendService";
 import { Box } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { WelcomeView } from "@/components/dashboard/WelcomeView";
-import { ChatView } from "@/components/chat/ChatView";
+import { FriendsPanel } from "@/components/dashboard/FriendsPanel";
+import { ChatPanel } from "@/components/chat/ChatPanel";
 import { AddFriendModal } from "@/components/modals/AddFriendModal";
 import { CreateGroupModal } from "@/components/modals/CreateGroupModal";
 import { useChatStore } from "@/store/chatStore";
 
-
-const DRAWER_WIDTH = 400;
+const FRIENDS_PANEL_WIDTH = 300;
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -51,48 +48,28 @@ export default function Home() {
   if (!user) return null;
 
   const handleSelectChat = (chatId: string) => {
-    setSelectedChatId(chatId);
+    setSelectedChatId(chatId || null);
   };
-
-  const handleMarkAllAsRead = async () => {
-    if (!user) return;
-    try {
-      await markAllChatsAsRead(user.uid);
-    } catch (error) {
-      console.error("Error marking all chats as read", error);
-    }
-  };
-
-  // New Chat now opens Add Friend modal (users can start a chat after adding a friend)
-  const handleNewChat = () => {
-    setIsAddFriendOpen(true);
-  };
-
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>
-      <DashboardSidebar 
-        user={user} 
-        onLogout={() => logout()} 
-        onNewChat={handleNewChat}
+      {/* Left Panel: Friends */}
+      <FriendsPanel
+        user={user}
+        width={FRIENDS_PANEL_WIDTH}
         onAddFriend={() => setIsAddFriendOpen(true)}
-        onMarkAllAsRead={handleMarkAllAsRead}
         onCreateGroup={() => setIsCreateGroupOpen(true)}
-        pendingFriendRequestCount={pendingFriendRequests.length}
-        width={DRAWER_WIDTH}
         onSelectChat={handleSelectChat}
-        selectedChatId={selectedChatId || undefined}
+        pendingFriendRequestCount={pendingFriendRequests.length}
       />
       
-      {selectedChatId ? (
-        <ChatView 
-          chatId={selectedChatId} 
-          onBack={() => setSelectedChatId(null)}
-        />
-      ) : (
-        <WelcomeView onNewChat={handleNewChat} />
-      )}
+      {/* Right Panel: ChatList or ChatView */}
+      <ChatPanel
+        selectedChatId={selectedChatId}
+        onSelectChat={handleSelectChat}
+      />
       
+      {/* Modals */}
       <AddFriendModal
         open={isAddFriendOpen}
         onClose={() => setIsAddFriendOpen(false)}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Modal, Box, Slide, Button, CircularProgress } from "@mui/material";
+import { Dialog, Box, Button, CircularProgress } from "@mui/material";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeToFriends, Friend } from "@/lib/friendService";
 import { getUserById, UserProfile } from "@/lib/userService";
@@ -108,80 +108,70 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const canProceed = step === "details" ? name.trim().length > 0 : selectedMembers.length > 0;
 
   return (
-    <Modal
+    <Dialog
       open={open}
       onClose={handleClose}
-      sx={{
-        "& .MuiBackdrop-root": {
-          bgcolor: "rgba(0, 0, 0, 0.6)",
+      PaperProps={{
+        sx: {
+          bgcolor: "#111B21",
+          color: "#E9EDEF",
+          width: "100%",
+          maxWidth: 450,
+          borderRadius: 2,
+          overflow: "hidden",
         },
       }}
     >
-      <Slide direction="left" in={open} mountOnEnter unmountOnExit>
-        <Box
+      <CreateGroupHeader 
+        onClose={handleClose} 
+        step={step}
+        onBack={handleBack}
+      />
+
+      <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 400 }}>
+        {step === "details" ? (
+          <CreateGroupDetails
+            name={name}
+            onNameChange={setName}
+            description={description}
+            onDescriptionChange={setDescription}
+          />
+        ) : (
+          <CreateGroupMembers
+            friends={friends}
+            friendProfiles={friendProfiles}
+            selectedMembers={selectedMembers}
+            onToggleMember={handleToggleMember}
+          />
+        )}
+      </Box>
+
+      {/* Action Button */}
+      <Box sx={{ p: 2, borderTop: "1px solid #2A3942", bgcolor: "#202C33" }}>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={step === "details" ? handleNext : handleCreate}
+          disabled={!canProceed || creating}
           sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 400,
-            height: "100vh",
-            bgcolor: "#111B21",
-            outline: "none",
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 0 30px rgba(0,0,0,0.3)",
+            bgcolor: "#00A884",
+            color: "#111B21",
+            textTransform: "none",
+            fontWeight: 600,
+            py: 1.25,
+            "&:hover": { bgcolor: "#00BF96" },
+            "&:disabled": { bgcolor: "#2A3942", color: "#8696A0" },
           }}
         >
-          <CreateGroupHeader 
-            onClose={handleClose} 
-            step={step}
-            onBack={handleBack}
-          />
-
-          {step === "details" ? (
-            <CreateGroupDetails
-              name={name}
-              onNameChange={setName}
-              description={description}
-              onDescriptionChange={setDescription}
-            />
+          {creating ? (
+            <CircularProgress size={24} sx={{ color: "#111B21" }} />
+          ) : step === "details" ? (
+            "Next"
           ) : (
-            <CreateGroupMembers
-              friends={friends}
-              friendProfiles={friendProfiles}
-              selectedMembers={selectedMembers}
-              onToggleMember={handleToggleMember}
-            />
+            `Create Group (${selectedMembers.length} members)`
           )}
-
-          {/* Action Button */}
-          <Box sx={{ p: 2, borderTop: "1px solid #2A3942" }}>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={step === "details" ? handleNext : handleCreate}
-              disabled={!canProceed || creating}
-              sx={{
-                bgcolor: "#00A884",
-                color: "#111B21",
-                textTransform: "none",
-                fontWeight: 600,
-                py: 1.25,
-                "&:hover": { bgcolor: "#00BF96" },
-                "&:disabled": { bgcolor: "#2A3942", color: "#8696A0" },
-              }}
-            >
-              {creating ? (
-                <CircularProgress size={24} sx={{ color: "#111B21" }} />
-              ) : step === "details" ? (
-                "Next"
-              ) : (
-                `Create Group (${selectedMembers.length} members)`
-              )}
-            </Button>
-          </Box>
-        </Box>
-      </Slide>
-    </Modal>
+        </Button>
+      </Box>
+    </Dialog>
   );
 };

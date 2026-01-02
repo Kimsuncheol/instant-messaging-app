@@ -4,31 +4,24 @@ import React, { useEffect, useState, useRef } from "react";
 import { 
   Box, 
   List, 
-  ListItemButton, 
-  ListItemAvatar, 
-  ListItemText, 
-  Avatar, 
   Typography,
-  TextField,
-  InputAdornment,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  TextField
 } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
 import { Chat, subscribeToChats, getUnreadCount, renameChat } from "@/lib/chatService";
-import { Timestamp } from "firebase/firestore";
 import { getUserById, UserProfile } from "@/lib/userService";
-
 import { useAuth } from "@/context/AuthContext";
-import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
 import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
-import { subscribeToFriends, Friend } from "@/lib/friendService";
 import { ChatContextMenu } from "./ChatContextMenu";
 
-type TabFilter = "all" | "unread" | "friends" | "groups";
+// Sub-components
+import { ChatSearchBar } from "./ChatSearchBar";
+import { ChatFilterTabs, TabFilter } from "./ChatFilterTabs";
+import { ChatListItem } from "./ChatListItem";
 
 interface ChatListProps {
   onSelectChat: (chatId: string) => void;
@@ -42,7 +35,6 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
-  const [friends, setFriends] = useState<Friend[]>([]);
   
   // Context menu state
   const [contextMenuAnchor, setContextMenuAnchor] = useState<{ top: number; left: number } | null>(null);
@@ -62,12 +54,6 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     });
     
     return () => unsubscribe();
-  }, [user]);
-
-  // Subscribe to friends list
-  useEffect(() => {
-    if (!user) return;
-    return subscribeToFriends(user.uid, setFriends);
   }, [user]);
 
   // Load user profiles for each chat
@@ -109,21 +95,6 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     return otherUserId ? chatUsers[otherUserId] : undefined;
   };
 
-  const formatTime = (timestamp: Timestamp | null) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate();
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
-    if (isToday) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    }
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
-  };
-
-  // Get friend user IDs for filtering
-  const friendUserIds = friends.map(f => f.odUserId);
-
   // Filter chats based on search term and active tab
   const filteredChats = chats.filter(chat => {
     // Search filter
@@ -136,11 +107,6 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
     // Tab filter
     switch (activeTab) {
-      case "friends": {
-        // Show only chats with friends
-        const otherUserId = chat.participants.find(p => p !== user?.uid);
-        return otherUserId && friendUserIds.includes(otherUserId);
-      }
       case "groups":
         return chat.type === "group";
       case "unread": {
@@ -154,70 +120,19 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     }
   });
 
-  const getTabStyle = (tab: TabFilter) => ({
-    px: 2,
-    py: 0.5,
-    bgcolor: activeTab === tab ? "#00A884" : "#202C33",
-    color: activeTab === tab ? "#111B21" : "#8696A0",
-    borderRadius: "16px",
-    fontSize: "0.8125rem",
-    fontWeight: activeTab === tab ? 500 : 400,
-    cursor: "pointer",
-    "&:hover": activeTab === tab ? {} : { bgcolor: "#2A3942" },
-  });
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#111B21" }}>
       {/* Search Bar */}
-      <Box sx={{ px: 1.5, py: 1 }}>
-        <TextField
-          fullWidth
-          placeholder="Search or start new chat"
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#8696A0", fontSize: 20 }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "#202C33",
-              borderRadius: "8px",
-              "& fieldset": { border: "none" },
-              "& input": {
-                color: "#E9EDEF",
-                fontSize: "0.875rem",
-                py: 1,
-                "&::placeholder": {
-                  color: "#8696A0",
-                  opacity: 1,
-                },
-              },
-            },
-          }}
-        />
-      </Box>
+      <ChatSearchBar 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm} 
+      />
 
       {/* Filter Tabs */}
-      <Box sx={{ px: 2, py: 1, display: "flex", gap: 1 }}>
-        <Box sx={getTabStyle("all")} onClick={() => setActiveTab("all")}>
-          All
-        </Box>
-        <Box sx={getTabStyle("unread")} onClick={() => setActiveTab("unread")}>
-          Unread
-        </Box>
-        <Box sx={getTabStyle("friends")} onClick={() => setActiveTab("friends")}>
-          Friends
-        </Box>
-        <Box sx={getTabStyle("groups")} onClick={() => setActiveTab("groups")}>
-          Groups
-        </Box>
-      </Box>
-
+      <ChatFilterTabs 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+      />
 
       {/* Chat List */}
       <List sx={{ flexGrow: 1, overflowY: "auto", py: 0 }}>
@@ -232,19 +147,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
         ) : (
           filteredChats.map((chat) => {
             const isGroup = chat.type === "group";
-            const otherUser = !isGroup ? getOtherUser(chat) : undefined;
             const otherUserId = !isGroup ? chat.participants.find(p => p !== user?.uid) : undefined;
-            
-            // For groups, display group info
-            const displayName = isGroup 
-              ? (chat.groupName || "Unnamed Group") 
-              : (otherUser?.displayName || "Unknown User");
-            const displayPhoto = isGroup 
-              ? chat.groupPhotoURL 
-              : otherUser?.photoURL;
-            const displayInitial = isGroup 
-              ? (chat.groupName?.[0] || "G") 
-              : otherUser?.displayName?.[0];
             
             const handleContextMenu = (e: React.MouseEvent) => {
               e.preventDefault();
@@ -265,101 +168,19 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
               }
             };
 
-            // Show pin icon if chat is pinned (for future UI enhancement)
-            
             return (
-              <ListItemButton
+              <ChatListItem
                 key={chat.id}
+                chat={chat}
                 selected={selectedChatId === chat.id}
-                onClick={() => onSelectChat(chat.id)}
+                onSelect={onSelectChat}
+                user={user}
+                getOtherUser={getOtherUser}
+                presence={otherUserId ? presences[otherUserId] : undefined}
                 onContextMenu={handleContextMenu}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  borderBottom: "1px solid #222D34",
-                  "&:hover": { bgcolor: "#202C33" },
-                  "&.Mui-selected": { 
-                    bgcolor: "#2A3942",
-                    "&:hover": { bgcolor: "#2A3942" },
-                  },
-                }}
-              >
-                <ListItemAvatar>
-                  {isGroup ? (
-                    <Avatar
-                      src={displayPhoto}
-                      sx={{ width: 50, height: 50, bgcolor: "#00A884" }}
-                    >
-                      {displayInitial}
-                    </Avatar>
-                  ) : (
-                    <ActiveStatusBadge presence={otherUserId ? presences[otherUserId] : undefined}>
-                      <Avatar
-                        src={displayPhoto}
-                        sx={{ width: 50, height: 50, bgcolor: "#6B7C85" }}
-                      >
-                        {displayInitial}
-                      </Avatar>
-                    </ActiveStatusBadge>
-                  )}
-                </ListItemAvatar>
-                <ListItemText
-                  sx={{ ml: 1 }}
-                  primary={
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography sx={{ color: "#E9EDEF", fontWeight: 400, fontSize: "1rem" }}>
-                        {displayName}
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography sx={{ color: user && getUnreadCount(chat, user.uid) > 0 ? "#00A884" : "#8696A0", fontSize: "0.75rem" }}>
-                          {formatTime(chat.lastMessageAt)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  }
-                  secondary={
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: "#8696A0",
-                          fontSize: "0.875rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          flex: 1,
-                        }}
-                      >
-                        {isGroup && chat.participants.length > 0 
-                          ? `${chat.participants.length} members` 
-                          : ""} {chat.lastMessage || (isGroup ? "" : "No messages yet")}
-                      </Typography>
-                      {user && getUnreadCount(chat, user.uid) > 0 && (
-                        <Box
-                          sx={{
-                            minWidth: 20,
-                            height: 20,
-                            borderRadius: "10px",
-                            bgcolor: "#00A884",
-                            color: "#111B21",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            px: 0.5,
-                            ml: 1,
-                          }}
-                        >
-                          {getUnreadCount(chat, user.uid)}
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItemButton>
+              />
             );
           })
         )}
