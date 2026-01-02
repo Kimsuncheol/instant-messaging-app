@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { logout } from "@/lib/authService";
 import { markAllChatsAsRead } from "@/lib/chatService";
+import { subscribeToFriendRequests, FriendRequest } from "@/lib/friendService";
 import { Box } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -22,6 +23,7 @@ export default function Home() {
   const router = useRouter();
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [pendingFriendRequests, setPendingFriendRequests] = useState<FriendRequest[]>([]);
   const selectedChatId = useChatStore((state) => state.selectedChatId);
   const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
 
@@ -30,6 +32,17 @@ export default function Home() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Subscribe to friend requests
+  useEffect(() => {
+    if (!user) return;
+    
+    const unsubscribe = subscribeToFriendRequests(user.uid, (requests) => {
+      setPendingFriendRequests(requests);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -65,6 +78,7 @@ export default function Home() {
         onAddFriend={() => setIsAddFriendOpen(true)}
         onMarkAllAsRead={handleMarkAllAsRead}
         onCreateGroup={() => setIsCreateGroupOpen(true)}
+        pendingFriendRequestCount={pendingFriendRequests.length}
         width={DRAWER_WIDTH}
         onSelectChat={handleSelectChat}
         selectedChatId={selectedChatId || undefined}

@@ -12,6 +12,8 @@ import {
   Timestamp,
   getDoc,
   updateDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 
 export interface FriendRequest {
@@ -32,6 +34,7 @@ export interface Friend {
 export interface Friendship {
   id: string;
   users: string[]; // Array of two user IDs
+  pinnedBy?: string[]; // Array of user IDs who have pinned this friendship
   createdAt: Timestamp;
 }
 
@@ -49,36 +52,41 @@ export const sendFriendRequest = async (
     where("status", "==", "pending")
   );
 
-  const existingDocs = await getDocs(existingQuery);
-  if (!existingDocs.empty) {
+  const existingRequests = await getDocs(existingQuery);
+
+  if (!existingRequests.empty) {
     throw new Error("Friend request already sent");
   }
 
-  // Check if already friends
-  const friendshipsRef = collection(db, "friendships");
-  const friendshipQuery = query(
-    friendshipsRef,
-    where("users", "array-contains", fromUserId)
+  // Check if there's a reverse request (from toUser to fromUser)
+  const reverseQuery = query(
+    requestsRef,
+    where("fromUserId", "==", toUserId),
+    where("toUserId", "==", fromUserId),
+    where("status", "==", "pending")
   );
-  const friendshipDocs = await getDocs(friendshipQuery);
-  const alreadyFriends = friendshipDocs.docs.some((doc) => {
-    const data = doc.data();
-    return data.users.includes(toUserId);
-  });
 
-  if (alreadyFriends) {
-    throw new Error("Already friends with this user");
+  const reverseRequests = await getDocs(reverseQuery);
+
+  if (!reverseRequests.empty) {
+    throw new Error("This user has already sent you a friend request");
+  }
+
+  // Check if they're already friends
+  const friendshipCheck = await getFriendshipByUsers(fromUserId, toUserId);
+  if (friendshipCheck) {
+    throw new Error("You are already friends with this user");
   }
 
   // Create the friend request
-  const newRequest = await addDoc(requestsRef, {
+  const docRef = await addDoc(requestsRef, {
     fromUserId,
     toUserId,
     status: "pending",
     createdAt: serverTimestamp(),
   });
 
-  return newRequest.id;
+  return docRef.id;
 };
 
 // Accept a friend request
@@ -90,60 +98,47 @@ export const acceptFriendRequest = async (requestId: string): Promise<void> => {
     throw new Error("Friend request not found");
   }
 
-  const requestData = requestDoc.data() as FriendRequest;
+  const data = requestDoc.data() as FriendRequest;
 
   // Create friendship
-  const friendshipsRef = collection(db, "friendships");
-  await addDoc(friendshipsRef, {
-    users: [requestData.fromUserId, requestData.toUserId],
+  await addDoc(collection(db, "friendships"), {
+    users: [data.fromUserId, data.toUserId],
     createdAt: serverTimestamp(),
   });
 
   // Update request status
-  await updateDoc(requestRef, {
-    status: "accepted",
-  });
+  await updateDoc(requestRef, { status: "accepted" });
 };
 
 // Reject a friend request
-export const rejectFriendRequest = async (requestId: string): Promise<void> => {
+export const rejectFriendRequest = async (
+  requestId: string
+): Promise<void> => {
   const requestRef = doc(db, "friendRequests", requestId);
-  await updateDoc(requestRef, {
-    status: "rejected",
-  });
-};
-
-// Delete a friend request (cancel)
-export const cancelFriendRequest = async (requestId: string): Promise<void> => {
-  const requestRef = doc(db, "friendRequests", requestId);
-  await deleteDoc(requestRef);
-};
-
-// Remove a friend
-export const removeFriend = async (friendshipId: string): Promise<void> => {
-  const friendshipRef = doc(db, "friendships", friendshipId);
-  await deleteDoc(friendshipRef);
+  await updateDoc(requestRef, { status: "rejected" });
 };
 
 // Get friends list for a user
 export const getFriends = async (userId: string): Promise<Friend[]> => {
   const friendshipsRef = collection(db, "friendships");
   const q = query(friendshipsRef, where("users", "array-contains", userId));
-
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => {
+
+  const friends: Friend[] = snapshot.docs.map((doc) => {
     const data = doc.data();
     const otherUserId = data.users.find((id: string) => id !== userId);
     return {
-      id: doc.id,
-      odUserId: otherUserId,
+      id: `${userId}_${otherUserId}`,
+      odUserId: otherUserId || "",
       friendshipId: doc.id,
       createdAt: data.createdAt,
     };
   });
+
+  return friends;
 };
 
-// Subscribe to friends list (real-time)
+// Subscribe to friends (real-time)
 export const subscribeToFriends = (
   userId: string,
   callback: (friends: Friend[]) => void
@@ -152,21 +147,22 @@ export const subscribeToFriends = (
   const q = query(friendshipsRef, where("users", "array-contains", userId));
 
   return onSnapshot(q, (snapshot) => {
-    const friends = snapshot.docs.map((doc) => {
+    const friends: Friend[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       const otherUserId = data.users.find((id: string) => id !== userId);
       return {
-        id: doc.id,
-        odUserId: otherUserId,
+        id: `${userId}_${otherUserId}`,
+        odUserId: otherUserId || "",
         friendshipId: doc.id,
         createdAt: data.createdAt,
       };
     });
+
     callback(friends);
   });
 };
 
-// Subscribe to incoming friend requests (real-time)
+// Subscribe to friend requests
 export const subscribeToFriendRequests = (
   userId: string,
   callback: (requests: FriendRequest[]) => void
@@ -179,15 +175,16 @@ export const subscribeToFriendRequests = (
   );
 
   return onSnapshot(q, (snapshot) => {
-    const requests = snapshot.docs.map((doc) => ({
+    const requests: FriendRequest[] = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
-    })) as FriendRequest[];
+      ...(doc.data() as Omit<FriendRequest, "id">),
+    }));
+
     callback(requests);
   });
 };
 
-// Subscribe to sent friend requests (real-time)
+// Subscribe to sent requests
 export const subscribeToSentRequests = (
   userId: string,
   callback: (requests: FriendRequest[]) => void
@@ -200,50 +197,19 @@ export const subscribeToSentRequests = (
   );
 
   return onSnapshot(q, (snapshot) => {
-    const requests = snapshot.docs.map((doc) => ({
+    const requests: FriendRequest[] = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
-    })) as FriendRequest[];
+      ...(doc.data() as Omit<FriendRequest, "id">),
+    }));
+
     callback(requests);
   });
 };
 
-// Check if two users are friends
-export const areFriends = async (
-  userId1: string,
-  userId2: string
-): Promise<boolean> => {
-  const friendshipsRef = collection(db, "friendships");
-  const q = query(friendshipsRef, where("users", "array-contains", userId1));
-
-  const snapshot = await getDocs(q);
-  return snapshot.docs.some((doc) => {
-    const data = doc.data();
-    return data.users.includes(userId2);
-  });
-};
-
-// Get pending request between two users
-export const getPendingRequest = async (
-  fromUserId: string,
-  toUserId: string
-): Promise<FriendRequest | null> => {
-  const requestsRef = collection(db, "friendRequests");
-  const q = query(
-    requestsRef,
-    where("fromUserId", "==", fromUserId),
-    where("toUserId", "==", toUserId),
-    where("status", "==", "pending")
-  );
-
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) return null;
-
-  const doc = snapshot.docs[0];
-  return {
-    id: doc.id,
-    ...doc.data(),
-  } as FriendRequest;
+// Remove a friend
+export const removeFriend = async (friendshipId: string): Promise<void> => {
+  const friendshipRef = doc(db, "friendships", friendshipId);
+  await deleteDoc(friendshipRef);
 };
 
 // Block a user
@@ -252,21 +218,17 @@ export const blockUser = async (
   blockedUserId: string
 ): Promise<void> => {
   const blocksRef = collection(db, "blockedUsers");
-  
-  // Check if already blocked
-  const q = query(
-    blocksRef,
-    where("userId", "==", userId),
-    where("blockedUserId", "==", blockedUserId)
-  );
-  const existing = await getDocs(q);
-  if (!existing.empty) return; // Already blocked
-  
   await addDoc(blocksRef, {
     userId,
     blockedUserId,
     createdAt: serverTimestamp(),
   });
+
+  // Remove friendship if exists
+  const friendship = await getFriendshipByUsers(userId, blockedUserId);
+  if (friendship) {
+    await removeFriend(friendship.id);
+  }
 };
 
 // Unblock a user
@@ -280,39 +242,46 @@ export const unblockUser = async (
     where("userId", "==", userId),
     where("blockedUserId", "==", blockedUserId)
   );
-  
+
   const snapshot = await getDocs(q);
-  snapshot.docs.forEach(async (docSnap) => {
-    await deleteDoc(doc(db, "blockedUsers", docSnap.id));
-  });
+  snapshot.forEach((doc) => deleteDoc(doc.ref));
 };
 
 // Check if a user is blocked
 export const isBlocked = async (
   userId: string,
-  targetUserId: string
+  otherUserId: string
 ): Promise<boolean> => {
   const blocksRef = collection(db, "blockedUsers");
-  const q = query(
+  const q1 = query(
     blocksRef,
     where("userId", "==", userId),
-    where("blockedUserId", "==", targetUserId)
+    where("blockedUserId", "==", otherUserId)
   );
-  
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  const q2 = query(
+    blocksRef,
+    where("userId", "==", otherUserId),
+    where("blockedUserId", "==", userId)
+  );
+
+  const [snapshot1, snapshot2] = await Promise.all([
+    getDocs(q1),
+    getDocs(q2),
+  ]);
+
+  return !snapshot1.empty || !snapshot2.empty;
 };
 
-// Get list of blocked users
+// Get blocked users
 export const getBlockedUsers = async (userId: string): Promise<string[]> => {
   const blocksRef = collection(db, "blockedUsers");
   const q = query(blocksRef, where("userId", "==", userId));
-  
+
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => doc.data().blockedUserId);
 };
 
-// Subscribe to blocked users (real-time)
+// Subscribe to blocked users
 export const subscribeToBlockedUsers = (
   userId: string,
   callback: (blockedIds: string[]) => void
@@ -341,4 +310,35 @@ export const getFriendshipByUsers = async (
   });
   
   return friendship ? { id: friendship.id } : null;
+};
+
+// Check if two users are friends
+export const areFriends = async (
+  userId1: string,
+  userId2: string
+): Promise<boolean> => {
+  const friendship = await getFriendshipByUsers(userId1, userId2);
+  return friendship !== null;
+};
+
+// Pin a friend
+export const pinFriend = async (
+  friendshipId: string,
+  userId: string
+): Promise<void> => {
+  const friendshipRef = doc(db, "friendships", friendshipId);
+  await updateDoc(friendshipRef, {
+    pinnedBy: arrayUnion(userId),
+  });
+};
+
+// Unpin a friend
+export const unpinFriend = async (
+  friendshipId: string,
+  userId: string
+): Promise<void> => {
+  const friendshipRef = doc(db, "friendships", friendshipId);
+  await updateDoc(friendshipRef, {
+    pinnedBy: arrayRemove(userId),
+  });
 };

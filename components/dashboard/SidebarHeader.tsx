@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, IconButton, Avatar, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Box, IconButton, Avatar, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Badge } from "@mui/material";
 import { 
   MoreVert as MoreIcon,
   Add as AddIcon,
@@ -19,6 +19,7 @@ interface SidebarHeaderProps {
   onAddFriend: () => void;
   onMarkAllAsRead: () => void;
   onCreateGroup: () => void;
+  pendingFriendRequestCount?: number;
 }
 
 export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ 
@@ -27,7 +28,8 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
   onNewChat, 
   onAddFriend,
   onMarkAllAsRead,
-  onCreateGroup
+  onCreateGroup,
+  pendingFriendRequestCount = 0,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
@@ -97,7 +99,19 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
               '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
             }}
           >
-            <PersonAddIcon />
+            <Badge 
+              badgeContent={pendingFriendRequestCount} 
+              color="error"
+              sx={{
+                '& .MuiBadge-badge': {
+                  bgcolor: '#00A884',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                },
+              }}
+            >
+              <PersonAddIcon />
+            </Badge>
           </IconButton>
         </Tooltip>
         <Tooltip title="New chat">

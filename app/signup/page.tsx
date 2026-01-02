@@ -15,7 +15,8 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 
 export default function SignUpPage() {
@@ -68,15 +69,26 @@ export default function SignUpPage() {
         password
       );
 
-      // Update display name
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
+      const user = userCredential.user;
+
+      // Update display name in Auth
+      if (user) {
+        await updateProfile(user, {
           displayName,
+        });
+
+        // Create user document in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          displayName: displayName,
+          photoURL: user.photoURL || "",
+          createdAt: serverTimestamp(),
         });
       }
 
-      // Redirect to main page
-      router.push("/");
+      // Redirect to login page
+      router.push("/login");
     } catch (err: unknown) {
       if (err instanceof Error) {
         // Firebase specific error mapping could go here

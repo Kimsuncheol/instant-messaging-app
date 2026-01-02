@@ -156,20 +156,20 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         )}
 
         {/* Delete (own messages only) */}
-        {canDelete && (
-          <>
-            <Divider sx={{ bgcolor: "#2A3942" }} />
-            <MenuItem 
-              onClick={handleDelete}
-              sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
-            >
-              <ListItemIcon>
-                <DeleteIcon sx={{ color: "#F15C6D" }} />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "#F15C6D" }}>Delete</ListItemText>
-            </MenuItem>
-          </>
-        )}
+        {/* Delete (own messages only) */}
+        {canDelete && [
+          <Divider key="delete-divider" sx={{ bgcolor: "#2A3942" }} />,
+          <MenuItem 
+            key="delete-item"
+            onClick={handleDelete}
+            sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
+          >
+            <ListItemIcon>
+              <DeleteIcon sx={{ color: "#F15C6D" }} />
+            </ListItemIcon>
+            <ListItemText sx={{ color: "#F15C6D" }}>Delete</ListItemText>
+          </MenuItem>
+        ]}
       </Menu>
 
       {/* Edit Dialog */}
