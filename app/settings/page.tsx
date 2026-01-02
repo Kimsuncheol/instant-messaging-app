@@ -15,6 +15,7 @@ import { SettingsProfileSection } from "./_components/SettingsProfileSection";
 import { SettingsAppearanceSection } from "./_components/SettingsAppearanceSection";
 import { SettingsLanguageSection } from "./_components/SettingsLanguageSection";
 import { SettingsOptionsList } from "./_components/SettingsOptionsList";
+import { SettingsLocaleSection } from "./_components/SettingsLocaleSection";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -68,6 +69,14 @@ export default function SettingsPage() {
         textPrimary={textPrimary} 
         textSecondary={textSecondary} 
         sectionTitle={t('settings.language')}
+      />
+
+      <Divider sx={{ borderColor: dividerColor }} />
+
+      <SettingsLocaleSection
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        sectionTitle="Date & Time Format"
       />
 
       <Divider sx={{ borderColor: dividerColor }} />

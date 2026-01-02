@@ -11,13 +11,19 @@ import {
   Paper,
   InputAdornment,
   IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff, Language as LanguageIcon } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
+import { useLocale } from "@/context/LocaleContext";
+import { useTranslations } from "next-intl";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -29,6 +35,8 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { locale, setLocale } = useLocale();
+  const t = useTranslations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +150,46 @@ export default function SignUpPage() {
         >
           Sign up to start chatting
         </Typography>
+
+        {/* Language Selector */}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel sx={{ color: "#8696A0" }}>Language</InputLabel>
+          <Select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as any)}
+            label="Language"
+            startAdornment={
+              <LanguageIcon sx={{ color: "#8696A0", mr: 1 }} />
+            }
+            sx={{
+              bgcolor: "#2A3942",
+              color: "#E9EDEF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#2A3942",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#00A884",
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#00A884",
+              },
+              "& .MuiSvgIcon-root": {
+                color: "#8696A0",
+              },
+            }}
+          >
+            <MenuItem value="en">English</MenuItem>
+            <MenuItem value="ko">한국어</MenuItem>
+            <MenuItem value="es">Español</MenuItem>
+            <MenuItem value="fr">Français</MenuItem>
+            <MenuItem value="zh">中文</MenuItem>
+            <MenuItem value="ja">日本語</MenuItem>
+            <MenuItem value="hi">हिन्दी</MenuItem>
+            <MenuItem value="de">Deutsch</MenuItem>
+            <MenuItem value="it">Italiano</MenuItem>
+            <MenuItem value="ru">Русский</MenuItem>
+          </Select>
+        </FormControl>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>

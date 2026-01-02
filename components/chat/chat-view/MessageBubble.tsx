@@ -5,6 +5,7 @@ import { Box, Typography } from "@mui/material";
 import { Done as SingleCheckIcon, DoneAll as DoubleCheckIcon, Reply as ForwardedIcon } from "@mui/icons-material";
 import { Message } from "@/lib/chatService";
 import { Timestamp } from "firebase/firestore";
+import { useDateFormat } from "@/context/DateFormatContext";
 
 interface MessageBubbleProps {
   message: Message;
@@ -21,11 +22,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onLongPress,
   onClick,
 }) => {
-  const formatTime = (timestamp: Timestamp | null) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate();
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const { formatTime } = useDateFormat();
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();

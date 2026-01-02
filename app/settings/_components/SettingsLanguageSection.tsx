@@ -4,9 +4,9 @@ import React from "react";
 import { 
   Box, 
   Typography, 
-  RadioGroup, 
-  FormControlLabel, 
-  Radio 
+  Select,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
 import { Language as LanguageIcon } from "@mui/icons-material";
 import { useTranslations } from "next-intl";
@@ -28,7 +28,7 @@ export const SettingsLanguageSection: React.FC<SettingsLanguageSectionProps> = (
 }) => {
   const t = useTranslations();
 
-  const economies = [
+  const languages = [
     { value: "en", label: t('locale.english') },
     { value: "ko", label: t('locale.korean') },
     { value: "es", label: t('locale.spanish') },
@@ -45,28 +45,43 @@ export const SettingsLanguageSection: React.FC<SettingsLanguageSectionProps> = (
     <Box sx={{ px: 3, py: 2 }}>
       <Typography 
         variant="overline" 
-        sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem" }}
+        sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem", mb: 1.5 }}
       >
         {sectionTitle}
       </Typography>
-      <RadioGroup 
-        value={locale} 
-        onChange={(e) => setLocale(e.target.value as any)}
-      >
-        {economies.map((lang) => (
-          <FormControlLabel 
-            key={lang.value}
-            value={lang.value} 
-            control={<Radio sx={{ color: textSecondary, "&.Mui-checked": { color: "#00A884" } }} />}
-            label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <LanguageIcon sx={{ color: textSecondary }} />
-                <Typography sx={{ color: textPrimary }}>{lang.label}</Typography>
-              </Box>
-            }
-          />
-        ))}
-      </RadioGroup>
+      <FormControl fullWidth>
+        <Select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value)}
+          sx={{
+            bgcolor: textPrimary === "#E9EDEF" ? "#2A3942" : "#F0F2F5",
+            color: textPrimary,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: textSecondary,
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#00A884",
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#00A884",
+            },
+            "& .MuiSvgIcon-root": {
+              color: textSecondary,
+            },
+          }}
+          startAdornment={
+            <LanguageIcon sx={{ color: textSecondary, mr: 1 }} />
+          }
+        >
+          {languages.map((lang) => (
+            <MenuItem key={lang.value} value={lang.value}>
+              <Typography sx={{ color: textPrimary }}>
+                {lang.label}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     </Box>
   );
 };

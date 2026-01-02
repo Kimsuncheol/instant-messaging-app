@@ -8,6 +8,7 @@ import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
 import { UserPresence } from "@/lib/presenceService";
 import { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
+import { useDateFormat } from "@/context/DateFormatContext";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -32,6 +33,8 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   onTouchStart,
   onTouchEnd,
 }) => {
+  const { formatRelativeTime } = useDateFormat();
+  
   const isGroup = chat.type === "group";
   const otherUser = !isGroup ? getOtherUser(chat) : undefined;
   
@@ -45,18 +48,6 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   const displayInitial = isGroup 
     ? (chat.groupName?.[0] || "G") 
     : otherUser?.displayName?.[0];
-
-  const formatTime = (timestamp: Timestamp | null) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate();
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
-    if (isToday) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    }
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
-  };
 
   return (
     <ListItemButton
@@ -106,7 +97,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography sx={{ color: user && getUnreadCount(chat, user.uid) > 0 ? "#00A884" : "#8696A0", fontSize: "0.75rem" }}>
-                {formatTime(chat.lastMessageAt)}
+                {formatRelativeTime(chat.lastMessageAt)}
               </Typography>
             </Box>
           </Box>

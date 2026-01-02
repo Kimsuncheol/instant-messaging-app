@@ -6,6 +6,7 @@ import { DeviceProvider } from "@/context/DeviceContext";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import { LocaleProvider } from "@/context/LocaleContext";
 import { IntlProvider } from "@/components/providers/IntlProvider";
+import { DateFormatProvider } from "@/context/DateFormatContext";
 
 
 const geistSans = Geist({
@@ -35,13 +36,15 @@ export default function RootLayout({
       >
         <LocaleProvider>
           <IntlProvider>
-            <ThemeRegistry>
-              <DeviceProvider>
-                <AuthProvider>
-                  {children}
-                </AuthProvider>
-              </DeviceProvider>
-            </ThemeRegistry>
+            <DateFormatProvider>
+              <ThemeRegistry>
+                <DeviceProvider>
+                  <AuthProvider>
+                    {children}
+                  </AuthProvider>
+                </DeviceProvider>
+              </ThemeRegistry>
+            </DateFormatProvider>
           </IntlProvider>
         </LocaleProvider>
       </body>
