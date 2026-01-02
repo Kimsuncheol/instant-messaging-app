@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   List,
@@ -8,14 +8,12 @@ import {
   ListItemAvatar,
   ListItemText,
   Avatar,
-  IconButton,
   Typography,
   Menu,
   MenuItem,
   ListItemIcon,
 } from "@mui/material";
 import {
-  MoreVert as MoreIcon,
   PushPin as PinIcon,
   PersonRemove as RemoveIcon,
 } from "@mui/icons-material";
@@ -57,25 +55,11 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
       );
       
       setPinnedFriendships(pinned);
-      
-      // Sort: pinned first, then alphabetically
-      const sorted = [...friendsList].sort((a, b) => {
-        const aIsPinned = pinned.has(a.id);
-        const bIsPinned = pinned.has(b.id);
-        
-        if (aIsPinned && !bIsPinned) return -1;
-        if (!aIsPinned && bIsPinned) return 1;
-        
-        const nameA = friendProfiles[a.odUserId]?.displayName || "";
-        const nameB = friendProfiles[b.odUserId]?.displayName || "";
-        return nameA.localeCompare(nameB);
-      });
-      
-      setFriends(sorted);
+      setFriends(friendsList);
     });
 
     return () => unsubscribe();
-  }, [user, friendProfiles]);
+  }, [user]);
 
   // Load friend profiles
   useEffect(() => {
@@ -97,7 +81,21 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
     if (friends.length > 0) {
       loadProfiles();
     }
-  }, [friends.length]);
+  }, [friends]);
+
+  const sortedFriends = useMemo(() => {
+    return [...friends].sort((a, b) => {
+      const aIsPinned = pinnedFriendships.has(a.id);
+      const bIsPinned = pinnedFriendships.has(b.id);
+      
+      if (aIsPinned && !bIsPinned) return -1;
+      if (!aIsPinned && bIsPinned) return 1;
+      
+      const nameA = friendProfiles[a.odUserId]?.displayName || "";
+      const nameB = friendProfiles[b.odUserId]?.displayName || "";
+      return nameA.localeCompare(nameB);
+    });
+  }, [friends, pinnedFriendships, friendProfiles]);
 
   const handleFriendClick = async (friendUserId: string) => {
     if (!user) return;
@@ -111,9 +109,11 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
     }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, friendId: string) => {
-    event.stopPropagation();
-    setMenuAnchor({ el: event.currentTarget, friendId });
+  const [longPressTriggered, setLongPressTriggered] = useState(false);
+  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMenuOpen = (anchorEl: HTMLElement, friendId: string) => {
+    setMenuAnchor({ el: anchorEl, friendId });
   };
 
   const handleMenuClose = () => {
@@ -187,14 +187,61 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
   return (
     <>
       <List sx={{ flex: 1, overflow: "auto", py: 0 }}>
-        {friends.map((friend) => {
+        {sortedFriends.map((friend) => {
           const profile = friendProfiles[friend.odUserId];
           const isPinned = pinnedFriendships.has(friend.id);
           
           return (
             <ListItemButton
               key={friend.id}
-              onClick={() => handleFriendClick(friend.odUserId)}
+              onClick={() => {
+                if (longPressTriggered) {
+                  setLongPressTriggered(false);
+                  return;
+                }
+                handleFriendClick(friend.odUserId);
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                handleMenuOpen(e.currentTarget, friend.id);
+              }}
+              onTouchStart={(e) => {
+                setLongPressTriggered(false);
+                const target = e.currentTarget;
+                longPressTimerRef.current = setTimeout(() => {
+                  setLongPressTriggered(true);
+                  handleMenuOpen(target, friend.id);
+                }, 500); // 500ms for long press
+              }}
+              onTouchEnd={() => {
+                if (longPressTimerRef.current) {
+                  clearTimeout(longPressTimerRef.current);
+                }
+              }}
+              onTouchMove={() => {
+                // If the user scrolls, cancel the long press
+                if (longPressTimerRef.current) {
+                  clearTimeout(longPressTimerRef.current);
+                }
+              }}
+              onMouseDown={(e) => {
+                 setLongPressTriggered(false);
+                 const target = e.currentTarget;
+                 longPressTimerRef.current = setTimeout(() => {
+                   setLongPressTriggered(true);
+                   handleMenuOpen(target, friend.id);
+                 }, 500);
+              }}
+              onMouseUp={() => {
+                if (longPressTimerRef.current) {
+                  clearTimeout(longPressTimerRef.current);
+                }
+              }}
+              onMouseLeave={() => {
+                 if (longPressTimerRef.current) {
+                  clearTimeout(longPressTimerRef.current);
+                 }
+              }}
               sx={{
                 px: 2,
                 py: 1.5,
@@ -227,13 +274,6 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
                   sx: { color: "#8696A0", fontSize: "0.875rem" },
                 }}
               />
-              <IconButton
-                size="small"
-                onClick={(e) => handleMenuOpen(e, friend.id)}
-                sx={{ color: "#8696A0" }}
-              >
-                <MoreIcon />
-              </IconButton>
             </ListItemButton>
           );
         })}
