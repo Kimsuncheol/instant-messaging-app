@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { Box, Typography, IconButton, TextField } from "@mui/material";
-import { Edit as EditIcon, Check as CheckIcon } from "@mui/icons-material";
+import { Edit as EditIcon, Check as CheckIcon, Close as CloseIcon } from "@mui/icons-material";
 
 interface ProfileAboutSectionProps {
   about: string;
-  onSave?: (about: string) => void;
+  onSave: (about: string) => Promise<void>;
   textPrimary: string;
   textSecondary: string;
   inputBg: string;
@@ -20,57 +20,56 @@ export function ProfileAboutSection({
   inputBg,
 }: ProfileAboutSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(about);
+  const [editValue, setEditValue] = useState(about);
 
-  const handleSave = () => {
-    onSave?.(value);
+  const handleSave = async () => {
+    await onSave(editValue);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(about);
     setIsEditing(false);
   };
 
   return (
     <Box sx={{ px: 3, py: 2 }}>
       <Typography
-        variant="overline"
+        variant="caption"
         sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem" }}
       >
-        About
+        ABOUT
       </Typography>
-
       {isEditing ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
           <TextField
             fullWidth
-            size="small"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            autoFocus
+            multiline
+            maxRows={3}
             sx={{
-              "& .MuiOutlinedInput-root": {
+              "& .MuiInputBase-root": {
                 bgcolor: inputBg,
-                "& input": { color: textPrimary },
+                color: textPrimary,
               },
             }}
           />
           <IconButton onClick={handleSave} sx={{ color: "#00A884" }}>
             <CheckIcon />
           </IconButton>
+          <IconButton onClick={handleCancel} sx={{ color: textSecondary }}>
+            <CloseIcon />
+          </IconButton>
         </Box>
       ) : (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mt: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
           <Typography sx={{ color: textPrimary, fontSize: "1rem" }}>
-            {value}
+            {about}
           </Typography>
-          <IconButton
-            onClick={() => setIsEditing(true)}
-            sx={{ color: textSecondary }}
-          >
-            <EditIcon fontSize="small" />
+          <IconButton onClick={() => setIsEditing(true)} sx={{ color: textSecondary }}>
+            <EditIcon />
           </IconButton>
         </Box>
       )}

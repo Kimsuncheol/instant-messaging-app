@@ -6,7 +6,7 @@ import { Edit as EditIcon, Check as CheckIcon, Close as CloseIcon } from "@mui/i
 
 interface ProfileNameSectionProps {
   displayName: string;
-  onSave?: (name: string) => void;
+  onSave: (name: string) => Promise<void>;
   textPrimary: string;
   textSecondary: string;
   inputBg: string;
@@ -20,38 +20,39 @@ export function ProfileNameSection({
   inputBg,
 }: ProfileNameSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(displayName);
+  const [editValue, setEditValue] = useState(displayName);
 
-  const handleSave = () => {
-    onSave?.(value);
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (editValue.trim()) {
+      await onSave(editValue);
+      setIsEditing(false);
+    }
   };
 
   const handleCancel = () => {
-    setValue(displayName);
+    setEditValue(displayName);
     setIsEditing(false);
   };
 
   return (
     <Box sx={{ px: 3, py: 2 }}>
       <Typography
-        variant="overline"
+        variant="caption"
         sx={{ color: "#00A884", fontWeight: 600, fontSize: "0.75rem" }}
       >
-        Your name
+        YOUR NAME
       </Typography>
-
       {isEditing ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
           <TextField
             fullWidth
-            size="small"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            autoFocus
             sx={{
-              "& .MuiOutlinedInput-root": {
+              "& .MuiInputBase-root": {
                 bgcolor: inputBg,
-                "& input": { color: textPrimary },
+                color: textPrimary,
               },
             }}
           />
@@ -63,27 +64,19 @@ export function ProfileNameSection({
           </IconButton>
         </Box>
       ) : (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mt: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
           <Typography sx={{ color: textPrimary, fontSize: "1rem" }}>
-            {value}
+            {displayName}
           </Typography>
-          <IconButton
-            onClick={() => setIsEditing(true)}
-            sx={{ color: textSecondary }}
-          >
-            <EditIcon fontSize="small" />
+          <IconButton onClick={() => setIsEditing(true)} sx={{ color: textSecondary }}>
+            <EditIcon />
           </IconButton>
         </Box>
       )}
-
-      <Typography sx={{ color: textSecondary, fontSize: "0.875rem", mt: 1 }}>
+      <Typography
+        variant="caption"
+        sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.5, display: "block" }}
+      >
         This name will be visible to your contacts.
       </Typography>
     </Box>
