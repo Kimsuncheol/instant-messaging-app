@@ -19,6 +19,7 @@ interface MessageInputProps {
   disabled?: boolean;
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
+  onVoiceCall?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -26,6 +27,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   disabled = false,
   onTypingStart,
   onTypingEnd,
+  onVoiceCall,
 }) => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -232,7 +234,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <SendIcon />
         </IconButton>
       ) : (
-        <IconButton sx={{ color: "#8696A0" }}>
+        <IconButton 
+          onClick={onVoiceCall}
+          sx={{ 
+            color: "#8696A0",
+            "&:hover": { color: "#00A884" },
+          }}
+        >
           <MicIcon />
         </IconButton>
       )}

@@ -17,6 +17,8 @@ import {
   Notifications as UnmuteIcon,
   DoneAll as MarkReadIcon,
   Delete as DeleteIcon,
+  Call as CallIcon,
+  Videocam as VideoIcon,
 } from "@mui/icons-material";
 import {
   Chat,
@@ -38,6 +40,8 @@ interface ChatContextMenuProps {
   userId: string;
   onRenameClick?: () => void;
   onLeaveSuccess?: () => void;
+  onVoiceCall?: () => void;
+  onVideoCall?: () => void;
 }
 
 export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
@@ -47,6 +51,8 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
   userId,
   onRenameClick,
   onLeaveSuccess,
+  onVoiceCall,
+  onVideoCall,
 }) => {
   if (!chat) return null;
 
@@ -161,6 +167,25 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
         </ListItemIcon>
         <ListItemText>Mark as read</ListItemText>
       </MenuItem>
+
+      {/* Call options for private chats */}
+      {!isGroup && (
+        <>
+          <MenuItem onClick={() => { onVoiceCall?.(); onClose(); }}>
+            <ListItemIcon>
+              <CallIcon sx={{ color: "#00A884" }} />
+            </ListItemIcon>
+            <ListItemText>Voice Call</ListItemText>
+          </MenuItem>
+
+          <MenuItem onClick={() => { onVideoCall?.(); onClose(); }}>
+            <ListItemIcon>
+              <VideoIcon sx={{ color: "#00A884" }} />
+            </ListItemIcon>
+            <ListItemText>Video Call</ListItemText>
+          </MenuItem>
+        </>
+      )}
 
       <Divider sx={{ bgcolor: "#2A3942" }} />
 

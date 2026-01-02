@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { sendMessage, subscribeToMessages, getChatById, Chat, markMessagesAsRead, Message } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
+import { useCall } from "@/context/CallContext";
 import { getUserById, UserProfile } from "@/lib/userService";
 import { handleTyping, subscribeToTyping, clearTyping } from "@/lib/typingService";
 import { ChatHeader } from "./chat-view/ChatHeader";
@@ -21,6 +22,7 @@ interface ChatViewProps {
 
 export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const { user } = useAuth();
+  const { startCall } = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [chat, setChat] = useState<Chat | null>(null);
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
@@ -129,6 +131,25 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     handleTyping(chatId, user.uid, user.displayName || "User", false);
   };
 
+  // Call handlers
+  const handleVoiceCall = () => {
+    if (chat?.type === "private" && user && otherUser) {
+      const otherUserId = chat.participants.find((p) => p !== user.uid);
+      if (otherUserId) {
+        startCall(chatId, otherUserId, otherUser.displayName || "User", "voice");
+      }
+    }
+  };
+
+  const handleVideoCall = () => {
+    if (chat?.type === "private" && user && otherUser) {
+      const otherUserId = chat.participants.find((p) => p !== user.uid);
+      if (otherUserId) {
+        startCall(chatId, otherUserId, otherUser.displayName || "User", "video");
+      }
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -144,6 +165,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         otherUser={otherUser}
         onBack={onBack}
         onAvatarClick={handleAvatarClick}
+        onVoiceCall={handleVoiceCall}
+        onVideoCall={handleVideoCall}
       />
 
       {typingUsers.length > 0 && <TypingIndicator typingUsers={typingUsers} />}
@@ -158,6 +181,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onSend={handleSendMessage}
         onTypingStart={handleTypingStart}
         onTypingEnd={handleTypingEnd}
+        onVoiceCall={handleVoiceCall}
       />
 
       {/* Profile Modal */}

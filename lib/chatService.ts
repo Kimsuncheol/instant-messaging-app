@@ -83,6 +83,13 @@ export interface Message {
   deleted?: boolean; // Soft delete flag
   reactions?: Record<string, string[]>; // emoji -> userIds who reacted
   forwardedFrom?: { chatId: string; messageId: string }; // If forwarded
+  // Call notification fields
+  callData?: {
+    type: "voice" | "video";
+    status: "missed" | "declined" | "ended";
+    duration?: number; // in seconds, for ended calls
+    callerId: string;
+  };
 }
 
 export const sendMessage = async (chatId: string, senderId: string, text: string) => {
@@ -423,4 +430,61 @@ export const getMessageById = async (
     id: messageDoc.id,
     ...messageDoc.data(),
   } as Message;
+};
+
+// Send a call notification message to a chat
+export const sendCallMessage = async (
+  chatId: string,
+  callerId: string,
+  callType: "voice" | "video",
+  status: "missed" | "declined" | "ended",
+  duration?: number
+): Promise<void> => {
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const chatRef = doc(db, "chats", chatId);
+  
+  // Generate display text based on status
+  let displayText = "";
+  const callTypeLabel = callType === "voice" ? "Voice call" : "Video call";
+  
+  switch (status) {
+    case "missed":
+      displayText = `📞 Missed ${callTypeLabel.toLowerCase()}`;
+      break;
+    case "declined":
+      displayText = `📞 ${callTypeLabel} declined`;
+      break;
+    case "ended":
+      if (duration && duration > 0) {
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        const durationStr = minutes > 0 
+          ? `${minutes}:${seconds.toString().padStart(2, "0")}` 
+          : `${seconds}s`;
+        displayText = `📞 ${callTypeLabel} • ${durationStr}`;
+      } else {
+        displayText = `📞 ${callTypeLabel} ended`;
+      }
+      break;
+  }
+  
+  // Add call notification message
+  await addDoc(messagesRef, {
+    text: displayText,
+    senderId: callerId,
+    createdAt: serverTimestamp(),
+    readBy: [callerId],
+    callData: {
+      type: callType,
+      status,
+      duration,
+      callerId,
+    },
+  });
+  
+  // Update last message in chat
+  await updateDoc(chatRef, {
+    lastMessage: displayText,
+    lastMessageAt: serverTimestamp(),
+  });
 };

@@ -7,6 +7,9 @@ import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import { LocaleProvider } from "@/context/LocaleContext";
 import { IntlProvider } from "@/components/providers/IntlProvider";
 import { DateFormatProvider } from "@/context/DateFormatContext";
+import { CallProvider } from "@/context/CallContext";
+import { IncomingCallModal } from "@/components/modals/IncomingCallModal";
+import { ActiveCallModal } from "@/components/modals/ActiveCallModal";
 
 
 const geistSans = Geist({
@@ -40,7 +43,11 @@ export default function RootLayout({
               <ThemeRegistry>
                 <DeviceProvider>
                   <AuthProvider>
-                    {children}
+                    <CallProvider>
+                      {children}
+                      <IncomingCallModal />
+                      <ActiveCallModal />
+                    </CallProvider>
                   </AuthProvider>
                 </DeviceProvider>
               </ThemeRegistry>
@@ -51,3 +58,4 @@ export default function RootLayout({
     </html>
   );
 }
+

@@ -2,9 +2,15 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Done as SingleCheckIcon, DoneAll as DoubleCheckIcon, Reply as ForwardedIcon } from "@mui/icons-material";
+import { 
+  Done as SingleCheckIcon, 
+  DoneAll as DoubleCheckIcon, 
+  Reply as ForwardedIcon,
+  Call as CallIcon,
+  Videocam as VideoIcon,
+  PhoneMissed as MissedCallIcon,
+} from "@mui/icons-material";
 import { Message } from "@/lib/chatService";
-import { Timestamp } from "firebase/firestore";
 import { useDateFormat } from "@/context/DateFormatContext";
 
 interface MessageBubbleProps {
@@ -84,6 +90,55 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       </Box>
     );
   };
+
+  // Handle call notification messages
+  if (message.callData) {
+    const { type: callType, status } = message.callData;
+    const isMissedOrDeclined = status === "missed" || status === "declined";
+    const iconColor = isMissedOrDeclined ? "#F15C6D" : "#00A884";
+    
+    const CallIconComponent = isMissedOrDeclined 
+      ? MissedCallIcon 
+      : callType === "video" 
+        ? VideoIcon 
+        : CallIcon;
+    
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          mb: 1,
+          px: 2,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            bgcolor: "rgba(255,255,255,0.05)",
+            borderRadius: "16px",
+            px: 2,
+            py: 1,
+          }}
+        >
+          <CallIconComponent sx={{ fontSize: "1.25rem", color: iconColor }} />
+          <Typography
+            sx={{
+              color: isMissedOrDeclined ? "#F15C6D" : "#E9EDEF",
+              fontSize: "0.875rem",
+            }}
+          >
+            {message.text.replace("📞 ", "")}
+          </Typography>
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   // Handle deleted messages
   if (message.deleted) {
