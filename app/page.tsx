@@ -4,12 +4,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { logout } from "@/lib/authService";
+import { markAllChatsAsRead } from "@/lib/chatService";
 import { Box } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeView } from "@/components/dashboard/WelcomeView";
 import { ChatView } from "@/components/chat/ChatView";
-import { NewChatModal } from "@/components/modals/NewChatModal";
+import { AddFriendModal } from "@/components/modals/AddFriendModal";
+import { CreateGroupModal } from "@/components/modals/CreateGroupModal";
 import { useChatStore } from "@/store/chatStore";
 
 
@@ -18,7 +20,8 @@ const DRAWER_WIDTH = 400;
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const selectedChatId = useChatStore((state) => state.selectedChatId);
   const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
 
@@ -38,13 +41,30 @@ export default function Home() {
     setSelectedChatId(chatId);
   };
 
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    try {
+      await markAllChatsAsRead(user.uid);
+    } catch (error) {
+      console.error("Error marking all chats as read", error);
+    }
+  };
+
+  // New Chat now opens Add Friend modal (users can start a chat after adding a friend)
+  const handleNewChat = () => {
+    setIsAddFriendOpen(true);
+  };
+
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>
       <DashboardSidebar 
         user={user} 
         onLogout={() => logout()} 
-        onNewChat={() => setIsNewChatOpen(true)}
+        onNewChat={handleNewChat}
+        onAddFriend={() => setIsAddFriendOpen(true)}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onCreateGroup={() => setIsCreateGroupOpen(true)}
         width={DRAWER_WIDTH}
         onSelectChat={handleSelectChat}
         selectedChatId={selectedChatId || undefined}
@@ -56,12 +76,17 @@ export default function Home() {
           onBack={() => setSelectedChatId(null)}
         />
       ) : (
-        <WelcomeView onNewChat={() => setIsNewChatOpen(true)} />
+        <WelcomeView onNewChat={handleNewChat} />
       )}
       
-      <NewChatModal 
-        open={isNewChatOpen} 
-        onClose={() => setIsNewChatOpen(false)} 
+      <AddFriendModal
+        open={isAddFriendOpen}
+        onClose={() => setIsAddFriendOpen(false)}
+      />
+      
+      <CreateGroupModal
+        open={isCreateGroupOpen}
+        onClose={() => setIsCreateGroupOpen(false)}
       />
     </Box>
   );

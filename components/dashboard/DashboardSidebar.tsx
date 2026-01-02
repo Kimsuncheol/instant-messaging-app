@@ -11,6 +11,9 @@ interface DashboardSidebarProps {
   user: User;
   onLogout: () => void;
   onNewChat: () => void;
+  onAddFriend: () => void;
+  onMarkAllAsRead: () => void;
+  onCreateGroup: () => void;
   width: number;
   onSelectChat: (chatId: string) => void;
   selectedChatId?: string;
@@ -19,7 +22,10 @@ interface DashboardSidebarProps {
 export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
   user, 
   onLogout, 
-  onNewChat, 
+  onNewChat,
+  onAddFriend,
+  onMarkAllAsRead,
+  onCreateGroup,
   width,
   onSelectChat,
   selectedChatId
@@ -39,7 +45,14 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         },
       }}
     >
-      <SidebarHeader onLogout={onLogout} onNewChat={onNewChat} />
+      <SidebarHeader 
+        user={user}
+        onLogout={onLogout} 
+        onNewChat={onNewChat} 
+        onAddFriend={onAddFriend} 
+        onMarkAllAsRead={onMarkAllAsRead}
+        onCreateGroup={onCreateGroup}
+      />
       <ChatList onSelectChat={onSelectChat} selectedChatId={selectedChatId} />
       <SidebarUserInfo user={user} />
     </Drawer>

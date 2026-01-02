@@ -1,22 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Typography, TextField, IconButton, Avatar } from "@mui/material";
-
-import { 
-  Send as SendIcon, 
-  AttachFile as AttachIcon,
-  EmojiEmotions as EmojiIcon,
-  Mic as MicIcon,
-  ArrowBack as BackIcon,
-  MoreVert as MoreIcon,
-  Search as SearchIcon,
-} from "@mui/icons-material";
-import { Message, sendMessage, subscribeToMessages, getChatById, Chat } from "@/lib/chatService";
-import { Timestamp } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { Box } from "@mui/material";
+import { sendMessage, subscribeToMessages, getChatById, Chat, markMessagesAsRead, Message } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
-
 import { getUserById, UserProfile } from "@/lib/userService";
+import { handleTyping, subscribeToTyping, clearTyping } from "@/lib/typingService";
+import { ChatHeader } from "./chat-view/ChatHeader";
+import { MessageList } from "./chat-view/MessageList";
+import { MessageInput } from "./chat-view/MessageInput";
+import { TypingIndicator } from "./chat-view/TypingIndicator";
+import { UserProfileModal } from "@/components/modals/UserProfileModal";
+import { MessageContextMenu } from "./MessageContextMenu";
+import { ForwardMessageModal } from "@/components/modals/ForwardMessageModal";
 
 interface ChatViewProps {
   chatId: string;
@@ -26,21 +22,28 @@ interface ChatViewProps {
 export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [, setChat] = useState<Chat | null>(null);
-
+  const [chat, setChat] = useState<Chat | null>(null);
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  
+  // Message context menu state
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [contextMenuMessage, setContextMenuMessage] = useState<Message | null>(null);
+  
+  // Forward modal state
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [forwardMessage, setForwardMessageState] = useState<Message | null>(null);
 
   // Load chat and other user info
   useEffect(() => {
     const loadChat = async () => {
       const chatData = await getChatById(chatId);
       setChat(chatData);
-      
-      if (chatData && user) {
-        const otherUserId = chatData.participants.find(p => p !== user.uid);
+
+      if (chatData && user && chatData.type === "private") {
+        const otherUserId = chatData.participants.find((p) => p !== user.uid);
         if (otherUserId) {
           const userData = await getUserById(otherUserId);
           setOtherUser(userData);
@@ -58,209 +61,143 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  // Auto-scroll to bottom
+  // Subscribe to typing indicator
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = async () => {
-    if (!newMessage.trim() || !user || sending) return;
+    if (!user) return;
     
-    setSending(true);
-    try {
-      await sendMessage(chatId, user.uid, newMessage.trim());
-      setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    } finally {
-      setSending(false);
+    const unsubscribe = subscribeToTyping(chatId, user.uid, (typing) => {
+      setTypingUsers(typing);
+    });
+    
+    // Clear typing on unmount
+    return () => {
+      unsubscribe();
+      clearTyping(chatId, user.uid);
+    };
+  }, [chatId, user]);
+
+  // Mark messages as read when chat is opened or receives new messages
+  useEffect(() => {
+    if (!user || !chatId) return;
+
+    const markAsRead = async () => {
+      try {
+        await markMessagesAsRead(chatId, user.uid);
+      } catch (error) {
+        console.error("Error marking messages as read:", error);
+      }
+    };
+
+    markAsRead();
+  }, [chatId, user, messages.length]);
+
+  const handleSendMessage = async (text: string) => {
+    if (!user) return;
+    await sendMessage(chatId, user.uid, text);
+  };
+
+  const handleAvatarClick = () => {
+    if (chat?.type === "private" && user) {
+      const otherUserId = chat.participants.find((p) => p !== user.uid);
+      if (otherUserId) {
+        setProfileUserId(otherUserId);
+        setProfileModalOpen(true);
+      }
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleMessageLongPress = (message: Message, event?: React.MouseEvent) => {
+    const position = event 
+      ? { top: event.clientY, left: event.clientX }
+      : { top: 200, left: 100 };
+    setContextMenuAnchor(position);
+    setContextMenuMessage(message);
   };
 
-  const formatTime = (timestamp: Timestamp | null) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate();
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const handleForward = (message: Message) => {
+    setForwardMessageState(message);
+    setForwardModalOpen(true);
   };
 
+  const handleTypingStart = () => {
+    if (!user) return;
+    handleTyping(chatId, user.uid, user.displayName || "User", true);
+  };
+
+  const handleTypingEnd = () => {
+    if (!user) return;
+    handleTyping(chatId, user.uid, user.displayName || "User", false);
+  };
 
   return (
-    <Box 
-      sx={{ 
-        display: "flex", 
-        flexDirection: "column", 
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
         width: "100%",
         height: "100vh",
         bgcolor: "#0B141A",
       }}
     >
-      {/* Header */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          alignItems: "center", 
-          gap: 2,
-          px: 2,
-          py: 1,
-          bgcolor: "#202C33",
-          borderBottom: "1px solid #2A3942",
-        }}
-      >
-        {onBack && (
-          <IconButton onClick={onBack} sx={{ color: "#AEBAC1" }}>
-            <BackIcon />
-          </IconButton>
-        )}
-        <Avatar 
-          src={otherUser?.photoURL} 
-          sx={{ width: 40, height: 40, bgcolor: "#6B7C85" }}
-        >
-          {otherUser?.displayName?.[0]}
-        </Avatar>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1rem" }}>
-            {otherUser?.displayName || "Loading..."}
-          </Typography>
-          <Typography sx={{ color: "#8696A0", fontSize: "0.75rem" }}>
-            online
-          </Typography>
-        </Box>
-        <IconButton sx={{ color: "#AEBAC1" }}>
-          <SearchIcon />
-        </IconButton>
-        <IconButton sx={{ color: "#AEBAC1" }}>
-          <MoreIcon />
-        </IconButton>
-      </Box>
+      <ChatHeader
+        chat={chat}
+        otherUser={otherUser}
+        onBack={onBack}
+        onAvatarClick={handleAvatarClick}
+      />
 
-      {/* Messages Area */}
-      <Box 
-        sx={{ 
-          flexGrow: 1, 
-          overflowY: "auto", 
-          px: 3,
-          py: 2,
-          backgroundImage: "url('/chat-bg.png')",
-          backgroundSize: "contain",
-          bgcolor: "#0B141A",
-        }}
-      >
-        {messages.map((msg) => {
-          const isOwn = msg.senderId === user?.uid;
-          return (
-            <Box
-              key={msg.id}
-              sx={{
-                display: "flex",
-                justifyContent: isOwn ? "flex-end" : "flex-start",
-                mb: 0.5,
-              }}
-            >
-              <Box
-                sx={{
-                  maxWidth: "65%",
-                  px: 1.5,
-                  py: 0.75,
-                  borderRadius: isOwn 
-                    ? "8px 8px 0 8px" 
-                    : "8px 8px 8px 0",
-                  bgcolor: isOwn ? "#005C4B" : "#202C33",
-                  position: "relative",
-                }}
-              >
-                <Typography 
-                  sx={{ 
-                    color: "#E9EDEF", 
-                    fontSize: "0.9375rem",
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {msg.text}
-                </Typography>
-                <Typography 
-                  sx={{ 
-                    color: "rgba(255,255,255,0.6)", 
-                    fontSize: "0.6875rem",
-                    textAlign: "right",
-                    mt: 0.25,
-                  }}
-                >
-                  {formatTime(msg.createdAt)}
-                </Typography>
-              </Box>
-            </Box>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </Box>
+      {typingUsers.length > 0 && <TypingIndicator typingUsers={typingUsers} />}
 
-      {/* Input Area */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          alignItems: "center", 
-          gap: 1,
-          px: 2,
-          py: 1,
-          bgcolor: "#202C33",
-        }}
-      >
-        <IconButton sx={{ color: "#8696A0" }}>
-          <EmojiIcon />
-        </IconButton>
-        <IconButton sx={{ color: "#8696A0" }}>
-          <AttachIcon />
-        </IconButton>
-        <TextField
-          fullWidth
-          placeholder="Type a message"
-          size="small"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          multiline
-          maxRows={4}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "#2A3942",
-              borderRadius: "8px",
-              "& fieldset": { border: "none" },
-              "& input, & textarea": {
-                color: "#E9EDEF",
-                fontSize: "0.9375rem",
-                "&::placeholder": {
-                  color: "#8696A0",
-                  opacity: 1,
-                },
-              },
-            },
+      <MessageList
+        messages={messages}
+        currentUserId={user?.uid || ""}
+        onMessageLongPress={handleMessageLongPress}
+      />
+
+      <MessageInput
+        onSend={handleSendMessage}
+        onTypingStart={handleTypingStart}
+        onTypingEnd={handleTypingEnd}
+      />
+
+      {/* Profile Modal */}
+      {profileUserId && (
+        <UserProfileModal
+          open={profileModalOpen}
+          onClose={() => {
+            setProfileModalOpen(false);
+            setProfileUserId(null);
           }}
+          userId={profileUserId}
         />
-        {newMessage.trim() ? (
-          <IconButton 
-            onClick={handleSend} 
-            disabled={sending}
-            sx={{ 
-              color: "#00A884",
-              "&:hover": { bgcolor: "rgba(0,168,132,0.1)" },
-            }}
-          >
-            <SendIcon />
-          </IconButton>
-        ) : (
-          <IconButton sx={{ color: "#8696A0" }}>
-            <MicIcon />
-          </IconButton>
-        )}
-      </Box>
+      )}
+
+      {/* Message Context Menu */}
+      <MessageContextMenu
+        message={contextMenuMessage}
+        anchorPosition={contextMenuAnchor}
+        onClose={() => {
+          setContextMenuAnchor(null);
+          setContextMenuMessage(null);
+        }}
+        chatId={chatId}
+        userId={user?.uid || ""}
+        onForward={handleForward}
+      />
+
+      {/* Forward Message Modal */}
+      {forwardMessage && (
+        <ForwardMessageModal
+          open={forwardModalOpen}
+          onClose={() => {
+            setForwardModalOpen(false);
+            setForwardMessageState(null);
+          }}
+          messageId={forwardMessage.id}
+          chatId={chatId}
+          messageText={forwardMessage.text}
+        />
+      )}
     </Box>
   );
 };

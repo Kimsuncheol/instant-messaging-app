@@ -5,7 +5,7 @@ import { signInWithGoogle, signInWithEmail } from "@/lib/authService";
 import { useAuth } from "@/context/AuthContext";
 
 import { useRouter } from "next/navigation";
-import { Box, Container } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { LoginBackground } from "@/components/auth/LoginBackground";
 import { LoginBranding } from "@/components/auth/LoginBranding";
@@ -68,6 +68,38 @@ export default function LoginPage() {
           onEmailLogin={handleEmailLogin} 
           error={error} 
         />
+        
+        <Box sx={{ mt: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="body2" sx={{ color: '#8696A0' }}>
+            New to WhatsApp?{' '}
+            <span 
+              onClick={() => router.push('/signup')}
+              style={{ 
+                color: '#00A884', 
+                cursor: 'pointer', 
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
+              Sign up
+            </span>
+          </Typography>
+          
+          <Typography variant="body2" sx={{ color: '#8696A0' }}>
+            Forgot your password?{' '}
+            <span 
+              onClick={() => router.push('/reset-password')}
+              style={{ 
+                color: '#00A884', 
+                cursor: 'pointer', 
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
+              Reset Password
+            </span>
+          </Typography>
+        </Box>
       </Container>
 
     </Box>
