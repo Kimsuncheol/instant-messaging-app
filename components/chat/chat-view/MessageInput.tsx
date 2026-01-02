@@ -9,8 +9,10 @@ import {
   Mic as MicIcon,
   Image as ImageIcon,
   InsertDriveFile as FileIcon,
+  AutoAwesome as AiIcon,
 } from "@mui/icons-material";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
+import { AiImageModal } from "@/components/modals/AiImageModal";
 
 interface MessageInputProps {
   onSend: (text: string, attachment?: { url: string; type: string; name: string }) => Promise<void>;
@@ -32,6 +34,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const handleSend = async () => {
     if (!message.trim() || sending || disabled) return;
@@ -165,6 +168,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <ListItemIcon><FileIcon sx={{ color: "#7F66FF" }} /></ListItemIcon>
           <ListItemText>Document</ListItemText>
         </MenuItem>
+        <MenuItem onClick={() => { setAttachAnchor(null); setAiModalOpen(true); }}>
+          <ListItemIcon><AiIcon sx={{ color: "#FFD700" }} /></ListItemIcon>
+          <ListItemText>AI Generate</ListItemText>
+        </MenuItem>
       </Menu>
 
       {/* Hidden file inputs */}
@@ -229,6 +236,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <MicIcon />
         </IconButton>
       )}
+
+      {/* AI Image Generation Modal */}
+      <AiImageModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        onImageGenerated={(imageUrl) => {
+          setMessage((prev) => prev + (prev ? " " : "") + `🎨 [AI Generated Image]`);
+        }}
+      />
     </Box>
   );
 };
