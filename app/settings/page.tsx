@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { Box, Divider } from "@mui/material";
+import { Box, Divider, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 import { useLocale } from "@/context/LocaleContext";
 import { useTranslations } from "next-intl";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { Logout as LogoutIcon } from "@mui/icons-material";
 
 // Refactored Components
 import { SettingsHeader } from "./_components/SettingsHeader";
@@ -36,6 +39,15 @@ export default function SettingsPage() {
   const textPrimary = isDark ? "#E9EDEF" : "#111B21";
   const textSecondary = isDark ? "#8696A0" : "#667781";
   const dividerColor = isDark ? "#2A3942" : "#E9EDEF";
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: bgColor }}>
@@ -85,6 +97,28 @@ export default function SettingsPage() {
         textPrimary={textPrimary} 
         textSecondary={textSecondary} 
       />
+
+      <Divider sx={{ borderColor: dividerColor }} />
+
+      {/* Sign Out Button */}
+      <Box sx={{ px: 3, py: 3 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<LogoutIcon />}
+          onClick={handleSignOut}
+          sx={{
+            color: "#F15C6D",
+            borderColor: "#F15C6D",
+            "&:hover": {
+              borderColor: "#F15C6D",
+              bgcolor: isDark ? "rgba(241, 92, 109, 0.1)" : "rgba(241, 92, 109, 0.05)",
+            },
+          }}
+        >
+          Sign Out
+        </Button>
+      </Box>
     </Box>
   );
 }
