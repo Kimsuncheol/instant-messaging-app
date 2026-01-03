@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Tooltip } from "@mui/material";
 import { 
   Done as SingleCheckIcon, 
   DoneAll as DoubleCheckIcon, 
@@ -9,6 +9,7 @@ import {
   Call as CallIcon,
   Videocam as VideoIcon,
   PhoneMissed as MissedCallIcon,
+  AccessTime as PendingIcon,
 } from "@mui/icons-material";
 import { Message } from "@/lib/chatService";
 import { useDateFormat } from "@/context/DateFormatContext";
@@ -20,6 +21,9 @@ interface MessageBubbleProps {
   onLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onClick?: (message: Message) => void;
 }
+
+// Read status types for clarity
+type ReadStatusType = 'sending' | 'sent' | 'delivered' | 'read';
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -35,22 +39,63 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     onLongPress?.(message, e);
   };
 
-  // Determine read status for own messages
-  const getReadStatus = () => {
+  // Determine read status for own messages with enhanced logic
+  const getReadStatus = (): { icon: React.ReactNode; tooltip: string } | null => {
     if (!isOwn) return null;
     
     const readCount = message.readBy?.length || 0;
+    const otherParticipants = totalParticipants - 1; // Exclude sender
     const isReadByAll = readCount >= totalParticipants;
+    const isReadBySome = readCount > 1 && readCount < totalParticipants;
     
-    if (isReadByAll) {
-      // Blue double check - read by all
-      return <DoubleCheckIcon sx={{ fontSize: "1rem", color: "#53BDEB" }} />;
-    } else if (readCount > 1) {
-      // Grey double check - delivered to some
-      return <DoubleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />;
+    // Determine status type
+    let status: ReadStatusType;
+    if (!message.createdAt) {
+      status = 'sending';
+    } else if (isReadByAll) {
+      status = 'read';
+    } else if (isReadBySome || readCount > 1) {
+      status = 'delivered';
     } else {
-      // Single check - sent
-      return <SingleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />;
+      status = 'sent';
+    }
+
+    // Return appropriate icon and tooltip
+    switch (status) {
+      case 'sending':
+        return {
+          icon: (
+            <PendingIcon 
+              sx={{ 
+                fontSize: "0.875rem", 
+                color: "rgba(255,255,255,0.4)",
+                animation: "pulse 1.5s infinite",
+                "@keyframes pulse": {
+                  "0%, 100%": { opacity: 0.4 },
+                  "50%": { opacity: 0.8 },
+                },
+              }} 
+            />
+          ),
+          tooltip: "Sending...",
+        };
+      case 'sent':
+        return {
+          icon: <SingleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />,
+          tooltip: "Sent",
+        };
+      case 'delivered':
+        return {
+          icon: <DoubleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />,
+          tooltip: `Delivered${otherParticipants > 1 ? ` to ${readCount - 1}/${otherParticipants}` : ""}`,
+        };
+      case 'read':
+        return {
+          icon: <DoubleCheckIcon sx={{ fontSize: "1rem", color: "#53BDEB" }} />,
+          tooltip: otherParticipants > 1 ? `Read by all ${otherParticipants} members` : "Read",
+        };
+      default:
+        return null;
     }
   };
 
@@ -215,7 +260,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.6875rem" }}>
             {formatTime(message.createdAt)}
           </Typography>
-          {getReadStatus()}
+          {(() => {
+            const status = getReadStatus();
+            if (!status) return null;
+            return (
+              <Tooltip title={status.tooltip} arrow placement="top">
+                <Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+                  {status.icon}
+                </Box>
+              </Tooltip>
+            );
+          })()}
         </Box>
       </Box>
     </Box>

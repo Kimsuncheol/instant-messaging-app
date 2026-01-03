@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, Box, IconButton } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import Fuse from "fuse.js";
 import { UserProfile, searchUsers, getUserById } from "@/lib/userService";
 import {
   sendFriendRequest,
@@ -133,6 +134,26 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({
   const friendIds = friends.map((f) => f.odUserId);
   const pendingRequestIds = sentRequests.map((r) => r.toUserId);
 
+  // Fuse.js fuzzy search configuration
+  const fuse = useMemo(() => {
+    return new Fuse(users, {
+      keys: ['displayName', 'email'],
+      threshold: 0.4, // 0 = exact match, 1 = match anything
+      includeScore: true,
+      ignoreLocation: true, // Search entire string
+      minMatchCharLength: 2,
+    });
+  }, [users]);
+
+  // Apply fuzzy search filtering
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim() || users.length === 0) {
+      return users;
+    }
+    const results = fuse.search(searchTerm);
+    return results.map(result => result.item);
+  }, [fuse, searchTerm, users]);
+
   return (
     <Dialog
       open={open}
@@ -177,7 +198,7 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({
         />
         <AddFriendResults
           loading={loading}
-          users={users}
+          users={filteredUsers}
           searchTerm={searchTerm}
           friendIds={friendIds}
           pendingRequestIds={pendingRequestIds}
