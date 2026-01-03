@@ -23,6 +23,8 @@ import { useAuth } from "@/context/AuthContext";
 import { createPrivateChat } from "@/lib/chatService";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
+import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
 
 interface FriendsListProps {
   onSelectChat: (chatId: string) => void;
@@ -35,6 +37,17 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
   const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({});
   const [pinnedFriendships, setPinnedFriendships] = useState<Set<string>>(new Set());
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; friendId: string } | null>(null);
+  const [presences, setPresences] = useState<Record<string, UserPresence>>({});
+
+  // Subscribe to presence changes for all friends
+  useEffect(() => {
+    if (friends.length === 0) return;
+    
+    const friendUserIds = friends.map(f => f.odUserId);
+    const unsubscribe = subscribeToMultiplePresences(friendUserIds, setPresences);
+    
+    return () => unsubscribe();
+  }, [friends]);
 
   // Subscribe to friends
   useEffect(() => {
@@ -250,12 +263,14 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
               }}
             >
               <ListItemAvatar>
-                <Avatar
-                  src={profile?.photoURL || undefined}
-                  sx={{ bgcolor: "#6B7C85" }}
-                >
-                  {profile?.displayName?.[0] || "?"}
-                </Avatar>
+                <ActiveStatusBadge presence={presences[friend.odUserId]}>
+                  <Avatar
+                    src={profile?.photoURL || undefined}
+                    sx={{ bgcolor: "#6B7C85" }}
+                  >
+                    {profile?.displayName?.[0] || "?"}
+                  </Avatar>
+                </ActiveStatusBadge>
               </ListItemAvatar>
               <ListItemText
                 primary={
