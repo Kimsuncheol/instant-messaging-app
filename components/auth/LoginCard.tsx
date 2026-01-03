@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Paper, 
   Typography, 
@@ -10,7 +10,9 @@ import {
   Divider,
   Box,
   InputAdornment,
-  IconButton 
+  IconButton, 
+  Checkbox,
+  FormControlLabel
 } from "@mui/material";
 import { 
   Google as GoogleIcon, 
@@ -24,17 +26,35 @@ interface LoginCardProps {
   error: string | null;
 }
 
+const REMEMBER_ME_KEY = 'loginRememberEmail';
+
 export const LoginCard: React.FC<LoginCardProps> = ({ onGoogleLogin, onEmailLogin, error }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [rememberMe, setRememberMe] = useState<boolean>(false);
+
+  // Load saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(REMEMBER_ME_KEY);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await onEmailLogin(email, password);
+      // Save or clear email based on rememberMe
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +222,28 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onGoogleLogin, onEmailLogi
       >
         Continue with Google
       </Button>
+
+      {/* Remember me */}
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            sx={{ 
+              color: '#8696A0',
+              '&.Mui-checked': {
+                color: '#00A884',
+              },
+            }}
+          />
+        }
+        label={
+          <Typography variant="body2" sx={{ color: '#8696A0' }}>
+            Remember me
+          </Typography>
+        }
+        sx={{ mt: 2 }}
+      />
 
       {error && (
         <Alert 
