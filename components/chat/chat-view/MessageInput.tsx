@@ -10,9 +10,11 @@ import {
   Image as ImageIcon,
   InsertDriveFile as FileIcon,
   AutoAwesome as AiIcon,
+  Translate as TranslateIcon,
 } from "@mui/icons-material";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { AiImageModal } from "@/components/modals/AiImageModal";
+import { TranslateModal } from "@/components/modals/TranslateModal";
 
 interface MessageInputProps {
   onSend: (text: string, attachment?: { url: string; type: string; name: string }) => Promise<void>;
@@ -37,6 +39,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [translateModalOpen, setTranslateModalOpen] = useState(false);
 
   const handleSend = async () => {
     if (!message.trim() || sending || disabled) return;
@@ -174,6 +177,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <ListItemIcon><AiIcon sx={{ color: "#FFD700" }} /></ListItemIcon>
           <ListItemText>AI Generate</ListItemText>
         </MenuItem>
+        <MenuItem onClick={() => { setAttachAnchor(null); setTranslateModalOpen(true); }}>
+          <ListItemIcon><TranslateIcon sx={{ color: "#00A884" }} /></ListItemIcon>
+          <ListItemText>Translate</ListItemText>
+        </MenuItem>
       </Menu>
 
       {/* Hidden file inputs */}
@@ -251,6 +258,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         onClose={() => setAiModalOpen(false)}
         onImageGenerated={(imageUrl) => {
           setMessage((prev) => prev + (prev ? " " : "") + `🎨 [AI Generated Image]`);
+        }}
+      />
+
+      {/* Translate Modal */}
+      <TranslateModal
+        open={translateModalOpen}
+        onClose={() => setTranslateModalOpen(false)}
+        originalText={message}
+        onTranslate={(translatedText) => {
+          setMessage(translatedText);
         }}
       />
     </Box>
