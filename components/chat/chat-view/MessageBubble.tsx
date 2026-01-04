@@ -13,6 +13,9 @@ import {
 } from "@mui/icons-material";
 import { Message } from "@/lib/chatService";
 import { useDateFormat } from "@/context/DateFormatContext";
+import { PollMessage } from "./PollMessage";
+import { EventMessage } from "./EventMessage";
+import { LocationMessage } from "./LocationMessage";
 
 interface MessageBubbleProps {
   message: Message;
@@ -20,6 +23,9 @@ interface MessageBubbleProps {
   totalParticipants?: number;
   onLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onClick?: (message: Message) => void;
+  onPollVote?: (messageId: string, optionId: string) => void;
+  onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
+  currentUserId?: string;
 }
 
 // Read status types for clarity
@@ -31,12 +37,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   totalParticipants = 2,
   onLongPress,
   onClick,
+  onPollVote,
+  onEventRSVP,
+  currentUserId,
 }) => {
   const { formatTime } = useDateFormat();
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     onLongPress?.(message, e);
+  };
+
+  // Placeholder for handleImageClick, assuming it will be added later or is external
+  const handleImageClick = (imageUrl: string) => {
+    console.log("Image clicked:", imageUrl);
+    // Implement image viewer logic here
   };
 
   // Determine read status for own messages with enhanced logic
@@ -200,6 +215,70 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         >
           This message was deleted
         </Typography>
+      </Box>
+    );
+  }
+
+  // Handle poll messages
+  if (message.poll && currentUserId) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
+        <Box>
+          <PollMessage
+            poll={message.poll}
+            currentUserId={currentUserId}
+            onVote={(optionId) => onPollVote?.(message.id, optionId)}
+          />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: "0.6875rem",
+              textAlign: isOwn ? "right" : "left",
+              mt: 0.5,
+              px: 1,
+            }}
+          >
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Handle event messages
+  if (message.event && currentUserId) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
+        <Box>
+          <EventMessage
+            event={message.event}
+            currentUserId={currentUserId}
+            onRSVP={(status) => onEventRSVP?.(message.id, status)}
+          />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: "0.6875rem",
+              textAlign: isOwn ? "right" : "left",
+              mt: 0.5,
+              px: 1,
+            }}
+          >
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
       </Box>
     );
   }

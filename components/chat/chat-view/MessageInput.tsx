@@ -11,13 +11,18 @@ import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { AiImageModal } from "@/components/modals/AiImageModal";
 import { TranslateModal } from "@/components/modals/TranslateModal";
 import { AttachmentPanel, AttachmentTriggerButton, AttachmentType } from "@/components/chat/chat-input";
+import { Poll } from "@/lib/chatService";
 
 interface MessageInputProps {
-  onSend: (text: string, attachment?: { url: string; type: string; name: string }) => Promise<void>;
+  onSend: (text: string, poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">) => Promise<void>;
   disabled?: boolean;
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
   onVoiceCall?: () => void;
+  onPollCreate?: () => void;
+  onEventCreate?: () => void;
+  onCameraClick?: () => void;
+  onLocationClick?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -26,6 +31,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onTypingStart,
   onTypingEnd,
   onVoiceCall,
+  onPollCreate,
+  onEventCreate,
+  onCameraClick,
+  onLocationClick,
 }) => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -88,12 +97,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         imageInputRef.current?.click();
         break;
       case "camera":
-        // Would trigger camera capture
-        setMessage((prev) => prev + (prev ? " " : "") + "📷 [Camera]");
+        onCameraClick?.();
+        setAttachPanelOpen(false);
         break;
       case "location":
-        // Would open location picker
-        setMessage((prev) => prev + (prev ? " " : "") + "📍 [Location]");
+        onLocationClick?.();
+        setAttachPanelOpen(false);
         break;
       case "contact":
         // Would open contact picker
@@ -106,12 +115,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         audioInputRef.current?.click();
         break;
       case "poll":
-        // Would open poll creation modal
-        setMessage((prev) => prev + (prev ? " " : "") + "📊 [Poll]");
+        onPollCreate?.();
+        setAttachPanelOpen(false);
         break;
       case "event":
-        // Would open event creation modal
-        setMessage((prev) => prev + (prev ? " " : "") + "📅 [Event]");
+        onEventCreate?.();
+        setAttachPanelOpen(false);
         break;
     }
   };

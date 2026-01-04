@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import { sendMessage, subscribeToMessages, getChatById, Chat, markMessagesAsRead, Message } from "@/lib/chatService";
+import { sendMessage, subscribeToMessages, getChatById, Chat, markMessagesAsRead, Message, Poll, voteOnPoll, rsvpToEvent } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
 import { useCall } from "@/context/CallContext";
 import { getUserById, UserProfile } from "@/lib/userService";
@@ -14,6 +14,12 @@ import { TypingIndicator } from "./chat-view/TypingIndicator";
 import { UserProfileModal } from "@/components/modals/UserProfileModal";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { ForwardMessageModal } from "@/components/modals/ForwardMessageModal";
+import { PollCreationModal } from "@/components/modals/PollCreationModal";
+import { EventCreationModal } from "@/components/modals/EventCreationModal";
+import { CameraModal } from "@/components/modals/CameraModal";
+import { GpsPermissionModal } from "@/components/modals/GpsPermissionModal";
+import { Event, LocationData } from "@/lib/chatService";
+import { useGpsStatus } from "@/hooks/useGpsStatus";
 
 interface ChatViewProps {
   chatId: string;
@@ -37,6 +43,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   // Forward modal state
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
   const [forwardMessage, setForwardMessageState] = useState<Message | null>(null);
+  
+  // Poll modal state
+  const [pollModalOpen, setPollModalOpen] = useState(false);
+  // Event modal state
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  // Camera modal state
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+
+  // GPS Status hook
+  const { checkGpsStatus, isGpsOff, permissionDenied, resetGpsStatus } = useGpsStatus();
 
   // Load chat and other user info
   useEffect(() => {
@@ -93,9 +109,58 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     markAsRead();
   }, [chatId, user, messages.length]);
 
-  const handleSendMessage = async (text: string) => {
+  // Unified sendMessage handler supporting text, poll, event, and file
+  const handleSendMessage = async (
+    text: string, 
+    poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">, 
+    event?: Omit<Event, "id" | "createdAt">,
+    file?: File,
+    location?: LocationData
+  ) => {
     if (!user) return;
-    await sendMessage(chatId, user.uid, text);
+    
+    // Handle file upload if present
+    if (file) {
+       try {
+         await sendMessage(chatId, user.uid, text, poll, event, file, location);
+       } catch (err) {
+         console.error("Error sending captured image:", err);
+       }
+       return;
+    }
+    
+    // Handle standard message
+    await sendMessage(chatId, user.uid, text, poll, event, undefined, location);
+  };
+
+
+
+  const handlePollVote = async (messageId: string, optionId: string) => {
+    if (!user) return;
+    try {
+      await voteOnPoll(chatId, messageId, optionId, user.uid, false); 
+    } catch (error) {
+      console.error("Error voting on poll:", error);
+    }
+  };
+
+  const handleEventRSVP = async (messageId: string, status: 'going' | 'maybe' | 'declined') => {
+    if (!user) return;
+    try {
+      await rsvpToEvent(chatId, messageId, user.uid, status);
+    } catch (error) {
+      console.error("Error responding to event:", error);
+    }
+  };
+
+  const handleCameraCapture = (file: File) => {
+    handleSendMessage("", undefined, undefined, file);
+  };
+
+  const handleLocationClick = () => {
+    checkGpsStatus((location) => {
+      handleSendMessage("", undefined, undefined, undefined, location);
+    });
   };
 
   const handleAvatarClick = () => {
@@ -175,6 +240,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         messages={messages}
         currentUserId={user?.uid || ""}
         onMessageLongPress={handleMessageLongPress}
+        onPollVote={handlePollVote}
+        onEventRSVP={handleEventRSVP}
       />
 
       <MessageInput
@@ -182,6 +249,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onTypingStart={handleTypingStart}
         onTypingEnd={handleTypingEnd}
         onVoiceCall={handleVoiceCall}
+        onPollCreate={() => setPollModalOpen(true)}
+        onEventCreate={() => setEventModalOpen(true)}
+        onCameraClick={() => setCameraModalOpen(true)}
+        onLocationClick={handleLocationClick}
       />
 
       {/* Profile Modal */}
@@ -222,6 +293,36 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
           messageText={forwardMessage.text}
         />
       )}
+      
+      {/* Poll Creation Modal */}
+      <PollCreationModal
+        open={pollModalOpen}
+        onClose={() => setPollModalOpen(false)}
+        onCreatePoll={(poll) => handleSendMessage("", poll)}
+        userId={user?.uid || ""}
+      />
+
+      {/* Event Creation Modal */}
+      <EventCreationModal
+        open={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        onCreateEvent={(event) => handleSendMessage("", undefined, event)}
+        userId={user?.uid || ""}
+      />
+
+      {/* Camera Modal */}
+      <CameraModal
+        open={cameraModalOpen}
+        onClose={() => setCameraModalOpen(false)}
+        onCapture={handleCameraCapture}
+      />
+
+      {/* GPS Permission Modal */}
+      <GpsPermissionModal
+        open={isGpsOff || permissionDenied}
+        onClose={resetGpsStatus}
+        permissionDenied={permissionDenied}
+      />
     </Box>
   );
 };

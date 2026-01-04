@@ -12,6 +12,8 @@ interface MessageListProps {
   currentUserId: string;
   onMessageLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onMessageClick?: (message: Message) => void;
+  onPollVote?: (messageId: string, optionId: string) => void;
+  onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
 }
 
 // Helper to get date key from timestamp
@@ -66,6 +68,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   currentUserId,
   onMessageLongPress,
   onMessageClick,
+  onPollVote,
+  onEventRSVP,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { formatRelativeTime } = useDateFormat();
@@ -124,6 +128,9 @@ export const MessageList: React.FC<MessageListProps> = ({
             isOwn={msg.senderId === currentUserId}
             onLongPress={onMessageLongPress}
             onClick={onMessageClick}
+            onPollVote={onPollVote}
+            onEventRSVP={onEventRSVP}
+            currentUserId={currentUserId}
           />
         );
       })}

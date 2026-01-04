@@ -15,6 +15,7 @@ import {
   writeBatch,
   arrayUnion
 } from "firebase/firestore";
+import { uploadMedia } from "./mediaService";
 
 
 export interface Chat {
@@ -33,6 +34,42 @@ export interface Chat {
   // Chat management fields
   pinnedBy?: string[]; // Array of user IDs who pinned this chat
   mutedBy?: string[]; // Array of user IDs who muted this chat
+}
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: string[]; // Array of user IDs who voted for this option
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+  createdBy: string;
+  createdAt: Timestamp;
+  expiresAt?: Timestamp;
+  allowMultipleVotes: boolean;
+  totalVotes: number;
+}
+
+export interface EventAttendee {
+  userId: string;
+  status: 'going' | 'maybe' | 'declined';
+  updatedAt: Timestamp;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  startTime: Timestamp;
+  endTime?: Timestamp;
+  allDay: boolean;
+  createdBy: string;
+  createdAt: Timestamp;
+  attendees: EventAttendee[];
 }
 
 export const createPrivateChat = async (currentUserId: string, otherUserId: string) => {
@@ -72,12 +109,23 @@ export const createPrivateChat = async (currentUserId: string, otherUserId: stri
   return newChat.id;
 };
 
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
 export interface Message {
   id: string;
   text: string;
   senderId: string;
   createdAt: Timestamp;
   readBy: string[]; // Array of user IDs who have read this message
+  type: "text" | "poll" | "call" | "deleted" | "image" | "event" | "location";
+  poll?: Poll;
+  event?: Event;
+  location?: LocationData;
+  image?: string;
   // Extended fields
   editedAt?: Timestamp; // When message was edited
   deleted?: boolean; // Soft delete flag
@@ -90,9 +138,21 @@ export interface Message {
     duration?: number; // in seconds, for ended calls
     callerId: string;
   };
+  // Poll data
+  poll?: Poll;
+  // Event data
+  event?: Event;
 }
 
-export const sendMessage = async (chatId: string, senderId: string, text: string) => {
+export const sendMessage = async (
+  chatId: string, 
+  senderId: string, 
+  text: string,
+  poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">,
+  event?: Omit<Event, "id" | "createdAt">,
+  file?: File,
+  location?: LocationData
+) => {
   const messagesRef = collection(db, "chats", chatId, "messages");
   const chatRef = doc(db, "chats", chatId);
   
@@ -103,13 +163,48 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
   const chatData = chatDoc.data();
   const otherParticipants = chatData.participants.filter((p: string) => p !== senderId);
   
-  // Add message with readBy initialized to sender only
-  await addDoc(messagesRef, {
+  // Prepare message data
+  let imageUrl = "";
+  if (file) {
+    try {
+      imageUrl = await uploadMedia(file, `chats/${chatId}/images`);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  }
+
+  const messageData: Record<string, unknown> = {
     text,
     senderId,
     createdAt: serverTimestamp(),
     readBy: [senderId],
-  });
+    type: file ? "image" : location ? "location" : "text",
+    image: imageUrl || null,
+    location: location || null,
+  };
+  
+  // Add poll if provided
+  if (poll) {
+    messageData.poll = {
+      ...poll,
+      id: `poll_${Date.now()}`,
+      totalVotes: 0,
+      createdAt: serverTimestamp(),
+    };
+  }
+
+  // Add event if provided
+  if (event) {
+    messageData.event = {
+      ...event,
+      id: `event_${Date.now()}`,
+      createdAt: serverTimestamp(),
+    };
+  }
+  
+  // Add message with readBy initialized to sender only
+  await addDoc(messagesRef, messageData);
   
   // Update last message and increment unread counts for other participants
   const unreadCounts = { ...(chatData.unreadCounts || {}) };
@@ -117,8 +212,12 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
     unreadCounts[userId] = (unreadCounts[userId] || 0) + 1;
   });
   
+  let lastMessageText = text;
+  if (poll) lastMessageText = "📊 Poll";
+  else if (event) lastMessageText = "📅 Event";
+
   await updateDoc(chatRef, {
-    lastMessage: text,
+    lastMessage: lastMessageText,
     lastMessageAt: serverTimestamp(),
     unreadCounts,
   });
@@ -246,6 +345,128 @@ export const unpinChat = async (chatId: string, userId: string): Promise<void> =
   const { arrayRemove } = await import("firebase/firestore");
   await updateDoc(chatRef, {
     pinnedBy: arrayRemove(userId),
+  });
+};
+
+/**
+ * Vote on a poll option
+ */
+export const voteOnPoll = async (
+  chatId: string,
+  messageId: string,
+  optionId: string,
+  userId: string,
+  allowMultipleVotes: boolean
+): Promise<void> => {
+  const messageRef = doc(db, "chats", chatId, "messages", messageId);
+  const messageDoc = await getDoc(messageRef);
+  
+  if (!messageDoc.exists()) {
+    throw new Error("Message not found");
+  }
+  
+  const messageData = messageDoc.data() as Message;
+  if (!messageData.poll) {
+    throw new Error("Message does not contain a poll");
+  }
+  
+  const poll = messageData.poll;
+  const updatedOptions = poll.options.map(option => {
+    // If not allowing multiple votes, remove user from all other options
+    if (!allowMultipleVotes && option.id !== optionId) {
+      return {
+        ...option,
+        votes: option.votes.filter(id => id !== userId)
+      };
+    }
+    
+    // Toggle vote on the selected option
+    if (option.id === optionId) {
+      const hasVoted = option.votes.includes(userId);
+      return {
+        ...option,
+        votes: hasVoted 
+          ? option.votes.filter(id => id !== userId)  // Remove vote
+          : [...option.votes, userId]  // Add vote
+      };
+    }
+    
+    return option;
+  });
+  
+  // Calculate total votes
+  const totalVotes = updatedOptions.reduce((sum, opt) => sum + opt.votes.length, 0);
+  
+  await updateDoc(messageRef, {
+    "poll.options": updatedOptions,
+    "poll.totalVotes": totalVotes,
+  });
+};
+
+/**
+ * Calculate poll results with percentages
+ */
+export const calculatePollResults = (poll: Poll): Array<{
+  optionId: string;
+  text: string;
+  voteCount: number;
+  percentage: number;
+  hasUserVoted: (userId: string) => boolean;
+}> => {
+  const total = poll.totalVotes || 1; // Avoid division by zero
+  
+  return poll.options.map(option => ({
+    optionId: option.id,
+    text: option.text,
+    voteCount: option.votes.length,
+    percentage: (option.votes.length / total) * 100,
+    hasUserVoted: (userId: string) => option.votes.includes(userId),
+  }));
+};
+
+/**
+ * RSVP to an event
+ */
+export const rsvpToEvent = async (
+  chatId: string,
+  messageId: string,
+  userId: string,
+  status: 'going' | 'maybe' | 'declined'
+): Promise<void> => {
+  const messageRef = doc(db, "chats", chatId, "messages", messageId);
+  const messageDoc = await getDoc(messageRef);
+  
+  if (!messageDoc.exists()) {
+    throw new Error("Message not found");
+  }
+  
+  const messageData = messageDoc.data() as Message;
+  if (!messageData.event) {
+    throw new Error("Message does not contain an event");
+  }
+  
+  const event = messageData.event;
+  const existingAttendeeIndex = event.attendees.findIndex(a => a.userId === userId);
+  
+  // Use a temporary object for the update to avoid type mismatch between Timestamp and FieldValue
+  const newAttendeeData = {
+    userId,
+    status,
+    updatedAt: serverTimestamp(),
+  };
+
+  const updatedAttendees = [...event.attendees];
+  // Helper to safely update array with mixed Timestamp/FieldValue types during write
+  const safeAttendee = newAttendeeData as unknown as EventAttendee;
+  
+  if (existingAttendeeIndex >= 0) {
+    updatedAttendees[existingAttendeeIndex] = safeAttendee;
+  } else {
+    updatedAttendees.push(safeAttendee);
+  }
+  
+  await updateDoc(messageRef, {
+    "event.attendees": updatedAttendees,
   });
 };
 
