@@ -2,12 +2,12 @@
 
 import React from "react";
 import { Box, ListItemButton, ListItemAvatar, ListItemText, Avatar, Typography } from "@mui/material";
+import { PushPin as PinIcon } from "@mui/icons-material";
 import { Chat, getUnreadCount } from "@/lib/chatService";
 import { UserProfile } from "@/lib/userService";
 import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
 import { UserPresence } from "@/lib/presenceService";
 import { User } from "firebase/auth";
-import { Timestamp } from "firebase/firestore";
 import { useDateFormat } from "@/context/DateFormatContext";
 
 interface ChatListItemProps {
@@ -17,6 +17,7 @@ interface ChatListItemProps {
   user: User | null;
   getOtherUser: (chat: Chat) => UserProfile | undefined;
   presence?: UserPresence;
+  isPinned?: boolean;
   onContextMenu: (e: React.MouseEvent) => void;
   onTouchStart: () => void;
   onTouchEnd: () => void;
@@ -29,6 +30,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   user,
   getOtherUser,
   presence,
+  isPinned,
   onContextMenu,
   onTouchStart,
   onTouchEnd,
@@ -92,9 +94,14 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
         secondaryTypographyProps={{ component: "div" }}
         primary={
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography sx={{ color: "#E9EDEF", fontWeight: 400, fontSize: "1rem" }}>
-              {displayName}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Typography sx={{ color: "#E9EDEF", fontWeight: 400, fontSize: "1rem" }}>
+                {displayName}
+              </Typography>
+              {isPinned && (
+                <PinIcon sx={{ fontSize: "0.875rem", color: "#8696A0", transform: "rotate(45deg)" }} />
+              )}
+            </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography sx={{ color: user && getUnreadCount(chat, user.uid) > 0 ? "#00A884" : "#8696A0", fontSize: "0.75rem" }}>
                 {formatRelativeTime(chat.lastMessageAt)}

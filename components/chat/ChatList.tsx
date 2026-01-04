@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { 
   Box, 
   List, 
@@ -12,7 +12,7 @@ import {
   Button,
   TextField
 } from "@mui/material";
-import { Chat, subscribeToChats, getUnreadCount, renameChat } from "@/lib/chatService";
+import { Chat, subscribeToChats, getUnreadCount, renameChat, isPinned } from "@/lib/chatService";
 import { getUserById, UserProfile } from "@/lib/userService";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
@@ -120,6 +120,18 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     }
   });
 
+  // Sort chats: pinned first, then by lastMessageAt
+  const sortedChats = useMemo(() => {
+    return [...filteredChats].sort((a, b) => {
+      const aIsPinned = user ? isPinned(a, user.uid) : false;
+      const bIsPinned = user ? isPinned(b, user.uid) : false;
+      
+      if (aIsPinned && !bIsPinned) return -1;
+      if (!aIsPinned && bIsPinned) return 1;
+      return 0;
+    });
+  }, [filteredChats, user]);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#111B21" }}>
       {/* Search Bar */}
@@ -136,7 +148,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
       {/* Chat List */}
       <List sx={{ flexGrow: 1, overflowY: "auto", py: 0 }}>
-        {filteredChats.length === 0 ? (
+        {sortedChats.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4, px: 3 }}>
             <Typography sx={{ color: "#8696A0", fontSize: "0.9375rem" }}>
               No conversations yet.
@@ -145,9 +157,10 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
             </Typography>
           </Box>
         ) : (
-          filteredChats.map((chat) => {
+          sortedChats.map((chat) => {
             const isGroup = chat.type === "group";
             const otherUserId = !isGroup ? chat.participants.find(p => p !== user?.uid) : undefined;
+            const chatIsPinned = user ? isPinned(chat, user.uid) : false;
             
             const handleContextMenu = (e: React.MouseEvent) => {
               e.preventDefault();
@@ -177,6 +190,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
                 user={user}
                 getOtherUser={getOtherUser}
                 presence={otherUserId ? presences[otherUserId] : undefined}
+                isPinned={chatIsPinned}
                 onContextMenu={handleContextMenu}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}

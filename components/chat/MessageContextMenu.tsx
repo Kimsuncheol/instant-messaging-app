@@ -93,6 +93,22 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
     onClose();
   };
 
+  // Detect likely source language (simple heuristic)  
+  const detectSourceLanguage = (text: string): string => {
+    // Check for Korean characters
+    if (/[\uAC00-\uD7AF]/.test(text)) return "ko";
+    // Check for Japanese (Hiragana, Katakana)
+    if (/[\u3040-\u30FF]/.test(text)) return "ja";
+    // Check for Chinese (CJK Unified Ideographs)
+    if (/[\u4E00-\u9FFF]/.test(text) && !/[\u3040-\u30FF]/.test(text)) return "zh-CN";
+    // Check for Cyrillic (Russian)
+    if (/[\u0400-\u04FF]/.test(text)) return "ru";
+    // Check for Hindi (Devanagari)
+    if (/[\u0900-\u097F]/.test(text)) return "hi";
+    // Default to English
+    return "en";
+  };
+
   // Translation using free API
   const handleTranslate = async () => {
     if (translating) return;
@@ -105,13 +121,21 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         zh: "zh-CN", ja: "ja", hi: "hi", de: "de", it: "it", ru: "ru"
       };
       const targetLang = langMap[locale] || "en";
+      const sourceLang = detectSourceLanguage(message.text);
+      
+      // If source and target are the same, no need to translate
+      if (sourceLang === targetLang) {
+        setTranslatedText("(Already in target language)");
+        setTranslating(false);
+        return;
+      }
       
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(message.text)}&langpair=auto|${targetLang}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(message.text)}&langpair=${sourceLang}|${targetLang}`
       );
       const data = await response.json();
       
-      if (data.responseData?.translatedText) {
+      if (data.responseData?.translatedText && !data.responseData.translatedText.includes("INVALID")) {
         setTranslatedText(data.responseData.translatedText);
       } else {
         setTranslatedText("Translation unavailable");

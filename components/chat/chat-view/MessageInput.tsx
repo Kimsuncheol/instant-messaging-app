@@ -1,20 +1,16 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Box, TextField, IconButton, Popover, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Box, TextField, IconButton, Popover } from "@mui/material";
 import {
   Send as SendIcon,
-  AttachFile as AttachIcon,
   EmojiEmotions as EmojiIcon,
   Mic as MicIcon,
-  Image as ImageIcon,
-  InsertDriveFile as FileIcon,
-  AutoAwesome as AiIcon,
-  Translate as TranslateIcon,
 } from "@mui/icons-material";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { AiImageModal } from "@/components/modals/AiImageModal";
 import { TranslateModal } from "@/components/modals/TranslateModal";
+import { AttachmentPanel, AttachmentTriggerButton, AttachmentType } from "@/components/chat/chat-input";
 
 interface MessageInputProps {
   onSend: (text: string, attachment?: { url: string; type: string; name: string }) => Promise<void>;
@@ -34,9 +30,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
-  const [attachAnchor, setAttachAnchor] = useState<HTMLElement | null>(null);
+  const [attachPanelOpen, setAttachPanelOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
@@ -84,28 +81,49 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     inputRef.current?.focus();
   };
 
-  // Attachment handlers
-  const handleAttachClick = (e: React.MouseEvent<HTMLElement>) => {
-    setAttachAnchor(e.currentTarget);
-  };
-
-  const handleFileSelect = (type: "image" | "file") => {
-    setAttachAnchor(null);
-    if (type === "image") {
-      imageInputRef.current?.click();
-    } else {
-      fileInputRef.current?.click();
+  // Handle attachment selection
+  const handleAttachmentSelect = (type: AttachmentType) => {
+    switch (type) {
+      case "gallery":
+        imageInputRef.current?.click();
+        break;
+      case "camera":
+        // Would trigger camera capture
+        setMessage((prev) => prev + (prev ? " " : "") + "📷 [Camera]");
+        break;
+      case "location":
+        // Would open location picker
+        setMessage((prev) => prev + (prev ? " " : "") + "📍 [Location]");
+        break;
+      case "contact":
+        // Would open contact picker
+        setMessage((prev) => prev + (prev ? " " : "") + "👤 [Contact]");
+        break;
+      case "document":
+        fileInputRef.current?.click();
+        break;
+      case "audio":
+        audioInputRef.current?.click();
+        break;
+      case "poll":
+        // Would open poll creation modal
+        setMessage((prev) => prev + (prev ? " " : "") + "📊 [Poll]");
+        break;
+      case "event":
+        // Would open event creation modal
+        setMessage((prev) => prev + (prev ? " " : "") + "📅 [Event]");
+        break;
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "file") => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "file" | "audio") => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // For now just show file name in message
-    // In production, upload to Firebase Storage first
     const attachmentText = type === "image" 
       ? `📷 ${file.name}`
+      : type === "audio"
+      ? `🎵 ${file.name}`
       : `📎 ${file.name}`;
     
     setMessage((prev) => prev + (prev ? " " : "") + attachmentText);
@@ -117,6 +135,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   return (
     <Box
       sx={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         gap: 1,
@@ -125,10 +144,18 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         bgcolor: "#202C33",
       }}
     >
+      {/* Attachment Panel */}
+      <AttachmentPanel
+        open={attachPanelOpen}
+        onClose={() => setAttachPanelOpen(false)}
+        onSelect={handleAttachmentSelect}
+      />
+
       {/* Emoji Button */}
       <IconButton 
         sx={{ color: "#8696A0" }}
         onClick={(e) => setEmojiAnchor(e.currentTarget)}
+        aria-label="Open emoji picker"
       >
         <EmojiIcon />
       </IconButton>
@@ -149,39 +176,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         />
       </Popover>
 
-      {/* Attachment Button */}
-      <IconButton sx={{ color: "#8696A0" }} onClick={handleAttachClick}>
-        <AttachIcon />
-      </IconButton>
-
-      {/* Attachment Menu */}
-      <Menu
-        anchorEl={attachAnchor}
-        open={Boolean(attachAnchor)}
-        onClose={() => setAttachAnchor(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-        PaperProps={{
-          sx: { bgcolor: "#233138", color: "#E9EDEF" }
-        }}
-      >
-        <MenuItem onClick={() => handleFileSelect("image")}>
-          <ListItemIcon><ImageIcon sx={{ color: "#00A884" }} /></ListItemIcon>
-          <ListItemText>Photo</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleFileSelect("file")}>
-          <ListItemIcon><FileIcon sx={{ color: "#7F66FF" }} /></ListItemIcon>
-          <ListItemText>Document</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { setAttachAnchor(null); setAiModalOpen(true); }}>
-          <ListItemIcon><AiIcon sx={{ color: "#FFD700" }} /></ListItemIcon>
-          <ListItemText>AI Generate</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { setAttachAnchor(null); setTranslateModalOpen(true); }}>
-          <ListItemIcon><TranslateIcon sx={{ color: "#00A884" }} /></ListItemIcon>
-          <ListItemText>Translate</ListItemText>
-        </MenuItem>
-      </Menu>
+      {/* Attachment Trigger Button */}
+      <AttachmentTriggerButton
+        isOpen={attachPanelOpen}
+        onClick={() => setAttachPanelOpen(!attachPanelOpen)}
+      />
 
       {/* Hidden file inputs */}
       <input
@@ -197,6 +196,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         hidden
         accept="*/*"
         onChange={(e) => handleFileChange(e, "file")}
+      />
+      <input
+        type="file"
+        ref={audioInputRef}
+        hidden
+        accept="audio/*"
+        onChange={(e) => handleFileChange(e, "audio")}
       />
 
       {/* Message Input */}
@@ -233,6 +239,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <IconButton
           onClick={handleSend}
           disabled={sending || disabled}
+          aria-label="Send message"
           sx={{
             color: "#00A884",
             "&:hover": { bgcolor: "rgba(0,168,132,0.1)" },
@@ -243,6 +250,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       ) : (
         <IconButton 
           onClick={onVoiceCall}
+          aria-label="Voice message"
           sx={{ 
             color: "#8696A0",
             "&:hover": { color: "#00A884" },

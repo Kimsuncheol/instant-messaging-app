@@ -35,6 +35,7 @@ export interface Friendship {
   id: string;
   users: string[]; // Array of two user IDs
   pinnedBy?: string[]; // Array of user IDs who have pinned this friendship
+  favouritedBy?: string[]; // Array of user IDs who have favourited this friendship
   createdAt: Timestamp;
 }
 
@@ -342,3 +343,26 @@ export const unpinFriend = async (
     pinnedBy: arrayRemove(userId),
   });
 };
+
+// Add friend to favourites
+export const favouriteFriend = async (
+  friendshipId: string,
+  userId: string
+): Promise<void> => {
+  const friendshipRef = doc(db, "friendships", friendshipId);
+  await updateDoc(friendshipRef, {
+    favouritedBy: arrayUnion(userId),
+  });
+};
+
+// Remove friend from favourites
+export const unfavouriteFriend = async (
+  friendshipId: string,
+  userId: string
+): Promise<void> => {
+  const friendshipRef = doc(db, "friendships", friendshipId);
+  await updateDoc(friendshipRef, {
+    favouritedBy: arrayRemove(userId),
+  });
+};
+
