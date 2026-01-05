@@ -17,9 +17,9 @@ import { ForwardMessageModal } from "@/components/modals/ForwardMessageModal";
 import { PollCreationModal } from "@/components/modals/PollCreationModal";
 import { EventCreationModal } from "@/components/modals/EventCreationModal";
 import { CameraModal } from "@/components/modals/CameraModal";
-import { GpsPermissionModal } from "@/components/modals/GpsPermissionModal";
-import { Event, LocationData } from "@/lib/chatService";
-import { useGpsStatus } from "@/hooks/useGpsStatus";
+import { LocationModal, LocationData } from "@/components/modals/LocationModal";
+import { ContactPickerModal } from "@/components/modals/ContactPickerModal";
+import { Event, ContactData } from "@/lib/chatService";
 
 interface ChatViewProps {
   chatId: string;
@@ -50,9 +50,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const [eventModalOpen, setEventModalOpen] = useState(false);
   // Camera modal state
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
-
-  // GPS Status hook
-  const { checkGpsStatus, isGpsOff, permissionDenied, resetGpsStatus } = useGpsStatus();
+  // Location modal state
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  // Contact modal state
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   // Load chat and other user info
   useEffect(() => {
@@ -109,28 +110,41 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     markAsRead();
   }, [chatId, user, messages.length]);
 
-  // Unified sendMessage handler supporting text, poll, event, and file
+  // Unified sendMessage handler supporting text, poll, event, file, and location
   const handleSendMessage = async (
     text: string, 
     poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">, 
     event?: Omit<Event, "id" | "createdAt">,
     file?: File,
-    location?: LocationData
+    location?: LocationData,
+    contact?: ContactData
   ) => {
     if (!user) return;
     
     // Handle file upload if present
     if (file) {
        try {
-         await sendMessage(chatId, user.uid, text, poll, event, file, location);
+         await sendMessage(chatId, user.uid, text, poll, event, file);
        } catch (err) {
          console.error("Error sending captured image:", err);
        }
        return;
     }
     
+    // Handle location if present
+    if (location) {
+      await sendMessage(chatId, user.uid, text, poll, event, undefined, location);
+      return;
+    }
+    
+    // Handle contact if present
+    if (contact) {
+      await sendMessage(chatId, user.uid, text, poll, event, undefined, undefined, contact);
+      return;
+    }
+    
     // Handle standard message
-    await sendMessage(chatId, user.uid, text, poll, event, undefined, location);
+    await sendMessage(chatId, user.uid, text, poll, event);
   };
 
 
@@ -157,10 +171,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     handleSendMessage("", undefined, undefined, file);
   };
 
-  const handleLocationClick = () => {
-    checkGpsStatus((location) => {
-      handleSendMessage("", undefined, undefined, undefined, location);
-    });
+  const handleLocationSend = (locationData: LocationData) => {
+    handleSendMessage("", undefined, undefined, undefined, locationData);
+  };
+
+  const handleContactSend = (contact: ContactData) => {
+    handleSendMessage("", undefined, undefined, undefined, undefined, contact);
   };
 
   const handleAvatarClick = () => {
@@ -252,7 +268,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onPollCreate={() => setPollModalOpen(true)}
         onEventCreate={() => setEventModalOpen(true)}
         onCameraClick={() => setCameraModalOpen(true)}
-        onLocationClick={handleLocationClick}
+        onLocationClick={() => setLocationModalOpen(true)}
+        onContactClick={() => setContactModalOpen(true)}
       />
 
       {/* Profile Modal */}
@@ -317,11 +334,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onCapture={handleCameraCapture}
       />
 
-      {/* GPS Permission Modal */}
-      <GpsPermissionModal
-        open={isGpsOff || permissionDenied}
-        onClose={resetGpsStatus}
-        permissionDenied={permissionDenied}
+      {/* Location Modal */}
+      <LocationModal
+        open={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        onSend={handleLocationSend}
+      />
+
+      {/* Contact Picker Modal */}
+      <ContactPickerModal
+        open={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
+        onSelect={handleContactSend}
       />
     </Box>
   );

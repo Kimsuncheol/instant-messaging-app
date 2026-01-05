@@ -72,6 +72,19 @@ export interface Event {
   attendees: EventAttendee[];
 }
 
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
+export interface ContactData {
+  userId: string;
+  displayName: string;
+  phoneNumber?: string;
+  photoURL?: string;
+}
+
 export const createPrivateChat = async (currentUserId: string, otherUserId: string) => {
   const chatsRef = collection(db, "chats");
   
@@ -109,23 +122,12 @@ export const createPrivateChat = async (currentUserId: string, otherUserId: stri
   return newChat.id;
 };
 
-export interface LocationData {
-  latitude: number;
-  longitude: number;
-  address?: string;
-}
-
 export interface Message {
   id: string;
   text: string;
   senderId: string;
   createdAt: Timestamp;
   readBy: string[]; // Array of user IDs who have read this message
-  type: "text" | "poll" | "call" | "deleted" | "image" | "event" | "location";
-  poll?: Poll;
-  event?: Event;
-  location?: LocationData;
-  image?: string;
   // Extended fields
   editedAt?: Timestamp; // When message was edited
   deleted?: boolean; // Soft delete flag
@@ -142,6 +144,10 @@ export interface Message {
   poll?: Poll;
   // Event data
   event?: Event;
+  // Location data
+  location?: LocationData;
+  // Contact data
+  contact?: ContactData;
 }
 
 export const sendMessage = async (
@@ -151,7 +157,8 @@ export const sendMessage = async (
   poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">,
   event?: Omit<Event, "id" | "createdAt">,
   file?: File,
-  location?: LocationData
+  location?: LocationData,
+  contact?: ContactData
 ) => {
   const messagesRef = collection(db, "chats", chatId, "messages");
   const chatRef = doc(db, "chats", chatId);
@@ -179,10 +186,20 @@ export const sendMessage = async (
     senderId,
     createdAt: serverTimestamp(),
     readBy: [senderId],
-    type: file ? "image" : location ? "location" : "text",
+    type: location ? "location" : (file ? "image" : "text"),
     image: imageUrl || null,
-    location: location || null,
   };
+
+  // Add location if provided
+  if (location) {
+    messageData.location = location;
+  }
+
+  // Add contact if provided
+  if (contact) {
+    messageData.contact = contact;
+    messageData.type = "contact";
+  }
   
   // Add poll if provided
   if (poll) {

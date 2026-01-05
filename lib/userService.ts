@@ -8,6 +8,7 @@ export interface UserProfile {
   displayName: string;
   photoURL: string;
   about?: string;
+  phoneNumber?: string;
 }
 
 export const searchUsers = async (searchTerm: string): Promise<UserProfile[]> => {

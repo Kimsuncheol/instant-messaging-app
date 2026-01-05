@@ -16,6 +16,7 @@ import { useDateFormat } from "@/context/DateFormatContext";
 import { PollMessage } from "./PollMessage";
 import { EventMessage } from "./EventMessage";
 import { LocationMessage } from "./LocationMessage";
+import { ContactMessage } from "./ContactMessage";
 
 interface MessageBubbleProps {
   message: Message;
@@ -46,12 +47,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     onLongPress?.(message, e);
-  };
-
-  // Placeholder for handleImageClick, assuming it will be added later or is external
-  const handleImageClick = (imageUrl: string) => {
-    console.log("Image clicked:", imageUrl);
-    // Implement image viewer logic here
   };
 
   // Determine read status for own messages with enhanced logic
@@ -267,6 +262,62 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             currentUserId={currentUserId}
             onRSVP={(status) => onEventRSVP?.(message.id, status)}
           />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: "0.6875rem",
+              textAlign: isOwn ? "right" : "left",
+              mt: 0.5,
+              px: 1,
+            }}
+          >
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Handle location messages
+  if (message.location) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
+        <Box>
+          <LocationMessage location={message.location} />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: "0.6875rem",
+              textAlign: isOwn ? "right" : "left",
+              mt: 0.5,
+              px: 1,
+            }}
+          >
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Handle contact messages
+  if (message.contact) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
+        <Box>
+          <ContactMessage contact={message.contact} />
           <Typography
             sx={{
               color: "rgba(255,255,255,0.6)",

@@ -11,6 +11,7 @@ import { ProfileAvatar } from "./_components/ProfileAvatar";
 import { ProfileNameSection } from "./_components/ProfileNameSection";
 import { ProfileAboutSection } from "./_components/ProfileAboutSection";
 import { ProfileEmailSection } from "./_components/ProfileEmailSection";
+import { ProfileContactSection } from "./_components/ProfileContactSection";
 import { ConfirmPasswordModal } from "@/components/modals/ConfirmPasswordModal";
 import { EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [about, setAbout] = useState("Hey there! I am using WhatsApp.");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -51,6 +53,12 @@ export default function ProfilePage() {
     setAbout(newAbout);
     // TODO: Update in Firebase
     console.log("Saving about:", newAbout);
+  };
+
+  const handleSavePhone = async (newPhone: string) => {
+    setPhoneNumber(newPhone);
+    // TODO: Update in Firebase
+    console.log("Saving phone:", newPhone);
   };
 
   // get email
@@ -112,6 +120,16 @@ export default function ProfilePage() {
         email={email || ""}
         textPrimary={textPrimary}
         textSecondary={textSecondary}
+      />
+      
+      <Divider sx={{ borderColor: dividerColor }} />
+      
+      <ProfileContactSection
+        phoneNumber={phoneNumber}
+        onSave={handleSavePhone}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        inputBg={inputBg}
       />
       
       <Divider sx={{ borderColor: dividerColor }} />

@@ -31,6 +31,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -91,6 +92,7 @@ export default function SignUpPage() {
           email: user.email,
           displayName: displayName,
           photoURL: user.photoURL || "",
+          phoneNumber: phoneNumber || "",
           createdAt: serverTimestamp(),
         });
       }
@@ -206,6 +208,24 @@ export default function SignUpPage() {
             margin="normal"
             required
             autoFocus
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "#2A3942",
+                "& fieldset": { borderColor: "#2A3942" },
+                "& input": { color: "#E9EDEF" },
+              },
+              "& .MuiInputLabel-root": { color: "#8696A0" },
+            }}
+          />
+
+          <TextField
+            fullWidth
+            label="Phone Number (Optional)"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            margin="normal"
+            placeholder="+1 234 567 8900"
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "#2A3942",

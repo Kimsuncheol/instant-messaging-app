@@ -23,6 +23,7 @@ interface MessageInputProps {
   onEventCreate?: () => void;
   onCameraClick?: () => void;
   onLocationClick?: () => void;
+  onContactClick?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -35,6 +36,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onEventCreate,
   onCameraClick,
   onLocationClick,
+  onContactClick,
 }) => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -105,8 +107,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         setAttachPanelOpen(false);
         break;
       case "contact":
-        // Would open contact picker
-        setMessage((prev) => prev + (prev ? " " : "") + "👤 [Contact]");
+        onContactClick?.();
+        setAttachPanelOpen(false);
         break;
       case "document":
         fileInputRef.current?.click();

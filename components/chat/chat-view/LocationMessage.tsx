@@ -1,69 +1,87 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, Link as MuiLink } from "@mui/material";
-import { LocationOn as LocationIcon } from "@mui/icons-material";
+import { Box, Typography, IconButton, Link } from "@mui/material";
+import { OpenInNew as OpenInNewIcon } from "@mui/icons-material";
 import { LocationData } from "@/lib/chatService";
 
 interface LocationMessageProps {
   location: LocationData;
-  isOwnMessage: boolean;
 }
 
-export const LocationMessage: React.FC<LocationMessageProps> = ({ location, isOwnMessage }) => {
+export const LocationMessage: React.FC<LocationMessageProps> = ({ location }) => {
   const { latitude, longitude, address } = location;
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-  
-  const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C${latitude},${longitude}&key=${apiKey}`;
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+  const getStaticMapUrl = () => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (apiKey) {
+      return `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=280x150&markers=color:red%7C${latitude},${longitude}&key=${apiKey}`;
+    }
+    // Fallback to OpenStreetMap if no API key
+    return `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=15&size=280x150&markers=${latitude},${longitude},red`;
+  };
+
+  const getMapsUrl = () => {
+    return `https://www.google.com/maps?q=${latitude},${longitude}`;
+  };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 300, overflow: "hidden", borderRadius: 2 }}>
-      <MuiLink href={mapsLink} target="_blank" rel="noopener noreferrer" underline="none">
-        <Box 
-          sx={{ 
-            width: "100%", 
-            height: 150, 
-            bgcolor: "#e0e0e0", 
-            backgroundImage: `url(${mapUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+    <Box
+      sx={{
+        width: 280,
+        borderRadius: 2,
+        overflow: "hidden",
+        bgcolor: "#1F2C34",
+      }}
+    >
+      {/* Map Preview */}
+      <Box sx={{ position: "relative" }}>
+        <Box
+          component="img"
+          src={getStaticMapUrl()}
+          alt="Location"
+          sx={{
+            width: "100%",
+            height: 150,
+            objectFit: "cover",
+            display: "block",
           }}
-        >
-          {!apiKey && (
-            <Typography variant="caption" color="text.secondary">
-              Map Preview (API Key Required)
-            </Typography>
-          )}
-        </Box>
-        <Box 
-          sx={{ 
-            p: 1.5, 
-            bgcolor: isOwnMessage ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)",
-            display: "flex",
-            alignItems: "center",
-            gap: 1
+        />
+        <IconButton
+          component={Link}
+          href={getMapsUrl()}
+          target="_blank"
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            bgcolor: "rgba(0,0,0,0.5)",
+            color: "white",
+            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
           }}
+          size="small"
         >
-          <LocationIcon sx={{ color: isOwnMessage ? "inherit" : "#00A884" }} />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: isOwnMessage ? "inherit" : "text.primary" }}>
-              current location
-            </Typography>
-            {address && (
-              <Typography variant="caption" sx={{ color: isOwnMessage ? "inherit" : "text.secondary", display: "block" }}>
-                {address}
-              </Typography>
-            )}
-            <Typography variant="caption" sx={{ color: isOwnMessage ? "inherit" : "text.secondary", fontSize: '0.7rem' }}>
-              {latitude.toFixed(6)}, {longitude.toFixed(6)}
-            </Typography>
-          </Box>
-        </Box>
-      </MuiLink>
+          <OpenInNewIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      {/* Location Info */}
+      <Box sx={{ p: 1.5 }}>
+        <Typography
+          variant="body2"
+          sx={{ color: "#E9EDEF", fontWeight: 500, mb: 0.5 }}
+        >
+          📍 Shared Location
+        </Typography>
+        {address && (
+          <Typography variant="caption" sx={{ color: "#8696A0", display: "block" }}>
+            {address}
+          </Typography>
+        )}
+        <Typography variant="caption" sx={{ color: "#667781" }}>
+          {latitude.toFixed(5)}, {longitude.toFixed(5)}
+        </Typography>
+      </Box>
     </Box>
   );
 };
