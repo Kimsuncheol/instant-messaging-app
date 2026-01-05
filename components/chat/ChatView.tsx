@@ -19,6 +19,7 @@ import { EventCreationModal } from "@/components/modals/EventCreationModal";
 import { CameraModal } from "@/components/modals/CameraModal";
 import { LocationModal, LocationData } from "@/components/modals/LocationModal";
 import { ContactPickerModal } from "@/components/modals/ContactPickerModal";
+import { MemoModal, MemoData } from "@/components/modals/MemoModal";
 import { Event, ContactData } from "@/lib/chatService";
 
 interface ChatViewProps {
@@ -54,6 +55,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   // Contact modal state
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  // Memo modal state
+  const [memoModalOpen, setMemoModalOpen] = useState(false);
+  // Save to memo state
+  const [saveToMemoContent, setSaveToMemoContent] = useState<string | null>(null);
 
   // Load chat and other user info
   useEffect(() => {
@@ -117,7 +122,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     event?: Omit<Event, "id" | "createdAt">,
     file?: File,
     location?: LocationData,
-    contact?: ContactData
+    contact?: ContactData,
+    memo?: MemoData
   ) => {
     if (!user) return;
     
@@ -140,6 +146,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     // Handle contact if present
     if (contact) {
       await sendMessage(chatId, user.uid, text, poll, event, undefined, undefined, contact);
+      return;
+    }
+
+    // Handle memo if present
+    if (memo) {
+      await sendMessage(chatId, user.uid, text, poll, event, undefined, undefined, undefined, memo);
       return;
     }
     
@@ -177,6 +189,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
 
   const handleContactSend = (contact: ContactData) => {
     handleSendMessage("", undefined, undefined, undefined, undefined, contact);
+  };
+
+  const handleMemoSend = (memo: MemoData, forwardToSelf?: boolean) => {
+    handleSendMessage("", undefined, undefined, undefined, undefined, undefined, memo);
+    // TODO: If forwardToSelf is true, also send to self-chat
+    if (forwardToSelf) {
+      console.log("Forward to self-chat:", memo);
+    }
+    setSaveToMemoContent(null);
+  };
+
+  const handleSaveToMemo = (content: string) => {
+    setSaveToMemoContent(content);
+    setMemoModalOpen(true);
   };
 
   const handleAvatarClick = () => {
@@ -258,6 +284,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onMessageLongPress={handleMessageLongPress}
         onPollVote={handlePollVote}
         onEventRSVP={handleEventRSVP}
+        onSaveToMemo={handleSaveToMemo}
       />
 
       <MessageInput
@@ -270,6 +297,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onCameraClick={() => setCameraModalOpen(true)}
         onLocationClick={() => setLocationModalOpen(true)}
         onContactClick={() => setContactModalOpen(true)}
+        onMemoClick={() => setMemoModalOpen(true)}
       />
 
       {/* Profile Modal */}
@@ -295,6 +323,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         chatId={chatId}
         userId={user?.uid || ""}
         onForward={handleForward}
+        onSaveToMemo={handleSaveToMemo}
       />
 
       {/* Forward Message Modal */}
@@ -346,6 +375,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         open={contactModalOpen}
         onClose={() => setContactModalOpen(false)}
         onSelect={handleContactSend}
+      />
+
+      {/* Memo Modal */}
+      <MemoModal
+        open={memoModalOpen}
+        onClose={() => {
+          setMemoModalOpen(false);
+          setSaveToMemoContent(null);
+        }}
+        onSend={handleMemoSend}
+        initialContent={saveToMemoContent || ""}
       />
     </Box>
   );

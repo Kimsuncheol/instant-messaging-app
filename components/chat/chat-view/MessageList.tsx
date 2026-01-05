@@ -72,7 +72,6 @@ export const MessageList: React.FC<MessageListProps> = ({
   onEventRSVP,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { formatRelativeTime } = useDateFormat();
 
   // Group messages by date
   const messagesWithSeparators = useMemo(() => {

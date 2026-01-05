@@ -85,6 +85,11 @@ export interface ContactData {
   photoURL?: string;
 }
 
+export interface MemoData {
+  title: string;
+  content: string;
+}
+
 export const createPrivateChat = async (currentUserId: string, otherUserId: string) => {
   const chatsRef = collection(db, "chats");
   
@@ -148,6 +153,8 @@ export interface Message {
   location?: LocationData;
   // Contact data
   contact?: ContactData;
+  // Memo data
+  memo?: MemoData;
 }
 
 export const sendMessage = async (
@@ -158,7 +165,8 @@ export const sendMessage = async (
   event?: Omit<Event, "id" | "createdAt">,
   file?: File,
   location?: LocationData,
-  contact?: ContactData
+  contact?: ContactData,
+  memo?: MemoData
 ) => {
   const messagesRef = collection(db, "chats", chatId, "messages");
   const chatRef = doc(db, "chats", chatId);
@@ -199,6 +207,12 @@ export const sendMessage = async (
   if (contact) {
     messageData.contact = contact;
     messageData.type = "contact";
+  }
+
+  // Add memo if provided
+  if (memo) {
+    messageData.memo = memo;
+    messageData.type = "memo";
   }
   
   // Add poll if provided

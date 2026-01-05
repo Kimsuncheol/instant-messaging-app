@@ -23,6 +23,7 @@ import {
   Reply as ForwardIcon,
   ContentCopy as CopyIcon,
   Translate as TranslateIcon,
+  Note as NoteIcon,
 } from "@mui/icons-material";
 import { Message, editMessage, deleteMessage, addReaction } from "@/lib/chatService";
 import { useLocale } from "@/context/LocaleContext";
@@ -37,6 +38,7 @@ interface MessageContextMenuProps {
   chatId: string;
   userId: string;
   onForward?: (message: Message) => void;
+  onSaveToMemo?: (content: string) => void;
 }
 
 export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
@@ -46,6 +48,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   chatId,
   userId,
   onForward,
+  onSaveToMemo,
 }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editText, setEditText] = useState("");
@@ -90,6 +93,11 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 
   const handleForward = () => {
     onForward?.(message);
+    onClose();
+  };
+
+  const handleSaveToMemo = () => {
+    onSaveToMemo?.(message.text);
     onClose();
   };
 
@@ -201,6 +209,17 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             <ForwardIcon sx={{ color: "#AEBAC1" }} />
           </ListItemIcon>
           <ListItemText>Forward</ListItemText>
+        </MenuItem>
+
+        {/* Save to Memo */}
+        <MenuItem 
+          onClick={handleSaveToMemo}
+          sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
+        >
+          <ListItemIcon>
+            <NoteIcon sx={{ color: "#FFA726" }} />
+          </ListItemIcon>
+          <ListItemText>Save to Memo</ListItemText>
         </MenuItem>
 
         {/* Translate */}

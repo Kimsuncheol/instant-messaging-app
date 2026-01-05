@@ -24,6 +24,7 @@ interface MessageInputProps {
   onCameraClick?: () => void;
   onLocationClick?: () => void;
   onContactClick?: () => void;
+  onMemoClick?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -37,6 +38,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onCameraClick,
   onLocationClick,
   onContactClick,
+  onMemoClick,
 }) => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -122,6 +124,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         break;
       case "event":
         onEventCreate?.();
+        setAttachPanelOpen(false);
+        break;
+      case "memo":
+        onMemoClick?.();
         setAttachPanelOpen(false);
         break;
     }

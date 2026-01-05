@@ -12,6 +12,7 @@ import {
   Poll as PollIcon,
   Event as EventIcon,
   Close as CloseIcon,
+  Note as MemoIcon,
 } from "@mui/icons-material";
 
 export type AttachmentType = 
@@ -22,7 +23,8 @@ export type AttachmentType =
   | "document" 
   | "audio" 
   | "poll" 
-  | "event";
+  | "event"
+  | "memo";
 
 interface AttachmentOption {
   type: AttachmentType;
@@ -40,6 +42,7 @@ const attachmentOptions: AttachmentOption[] = [
   { type: "audio", icon: <AudioIcon />, label: "Audio", color: "#F5A623" },
   { type: "poll", icon: <PollIcon />, label: "Poll", color: "#FF6B6B" },
   { type: "event", icon: <EventIcon />, label: "Event", color: "#00BFA5" },
+  { type: "memo", icon: <MemoIcon />, label: "Memo", color: "#FFA726" },
 ];
 
 interface AttachmentPanelProps {

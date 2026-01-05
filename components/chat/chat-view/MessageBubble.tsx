@@ -17,6 +17,7 @@ import { PollMessage } from "./PollMessage";
 import { EventMessage } from "./EventMessage";
 import { LocationMessage } from "./LocationMessage";
 import { ContactMessage } from "./ContactMessage";
+import { MemoMessage } from "./MemoMessage";
 
 interface MessageBubbleProps {
   message: Message;
@@ -334,8 +335,38 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     );
   }
 
+  // Handle memo messages
+  if (message.memo) {
+    return (
+      <Box
+        data-testid="message-bubble"
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
+        <Box>
+          <MemoMessage memo={message.memo} messageId={message.id} isOwn={isOwn} />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: "0.6875rem",
+              textAlign: isOwn ? "right" : "left",
+              mt: 0.5,
+              px: 1,
+            }}
+          >
+            {formatTime(message.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box
+      data-testid="message-bubble"
       sx={{
         display: "flex",
         justifyContent: isOwn ? "flex-end" : "flex-start",
