@@ -89,7 +89,12 @@ export const MessageList: React.FC<MessageListProps> = ({
       [];
     let lastDateKey = "";
 
-    messages.forEach((msg) => {
+    // Filter out messages deleted by current user
+    const visibleMessages = messages.filter(
+      (msg) => !msg.deletedFor?.includes(currentUserId)
+    );
+
+    visibleMessages.forEach((msg) => {
       const dateKey = getDateKey(msg.createdAt);
 
       if (dateKey !== lastDateKey) {
@@ -101,7 +106,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     });
 
     return result;
-  }, [messages]);
+  }, [messages, currentUserId]);
 
   // Auto-scroll to bottom when new messages arrive, BUT only if not searching
   useEffect(() => {

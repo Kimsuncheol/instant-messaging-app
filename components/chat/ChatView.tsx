@@ -114,13 +114,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   }, [chatId, user]);
 
   // Subscribe to messages
+  // Extract joinedAt if available, but don't block subscription if not
   const joinedAt = chat?.participantJoinedAt?.[user?.uid || ""];
   const joinedAtMillis = joinedAt?.toMillis();
 
   useEffect(() => {
-    // Wait for chat data to be loaded to determine join time (for filtering)
-    if (!chat || !user) return;
+    if (!user) return; // Only require user to be available
 
+    // For legacy chats without participantJoinedAt, joinedAt will be undefined
+    // and subscribeToMessages will fetch all messages (backward compatible)
     const unsubscribe = subscribeToMessages(
       chatId,
       (msgs) => {

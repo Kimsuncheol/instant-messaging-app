@@ -146,7 +146,9 @@ export interface Message {
   type?: "text" | "image" | "location" | "contact" | "memo" | "system"; // Message type
   // Extended fields
   editedAt?: Timestamp; // When message was edited
-  deleted?: boolean; // Soft delete flag
+  deleted?: boolean; // Soft delete flag (for "Delete for Everyone")
+  deletedAt?: Timestamp; // When message was deleted for everyone
+  deletedFor?: string[]; // Array of user IDs who deleted this message for themselves
   reactions?: Record<string, string[]>; // emoji -> userIds who reacted
   forwardedFrom?: { chatId: string; messageId: string }; // If forwarded
   // Call notification fields
@@ -646,6 +648,60 @@ export const editMessage = async (
 };
 
 // Delete a message (soft delete)
+// Delete message for current user only (hides it from their view)
+export const deleteMessageForMe = async (
+  chatId: string,
+  messageId: string,
+  userId: string
+): Promise<void> => {
+  const messageRef = doc(db, "chats", chatId, "messages", messageId);
+  await updateDoc(messageRef, {
+    deletedFor: arrayUnion(userId),
+  });
+};
+
+// Delete message for everyone (only for own messages within time limit)
+export const deleteMessageForEveryone = async (
+  chatId: string,
+  messageId: string,
+  userId: string
+): Promise<void> => {
+  const messageRef = doc(db, "chats", chatId, "messages", messageId);
+  const messageDoc = await getDoc(messageRef);
+  
+  if (!messageDoc.exists()) {
+    throw new Error("Message not found");
+  }
+  
+  const messageData = messageDoc.data();
+  
+  // Validate that the user is the sender
+  if (messageData.senderId !== userId) {
+    throw new Error("You can only delete your own messages for everyone");
+  }
+  
+  // Check if already deleted
+  if (messageData.deleted) {
+    throw new Error("Message is already deleted");
+  }
+  
+  // Optional: Check time limit (1 hour = 3600000 ms)
+  const ONE_HOUR = 60 * 60 * 1000;
+  const messageTime = messageData.createdAt?.toMillis() || 0;
+  const now = Date.now();
+  
+  if (now - messageTime > ONE_HOUR) {
+    throw new Error("Messages can only be deleted for everyone within 1 hour");
+  }
+  
+  await updateDoc(messageRef, {
+    deleted: true,
+    deletedAt: serverTimestamp(),
+    text: "This message was deleted",
+  });
+};
+
+// Legacy function - redirects to deleteMessageForEveryone for backward compatibility
 export const deleteMessage = async (
   chatId: string,
   messageId: string

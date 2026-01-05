@@ -20,12 +20,19 @@ import {
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
+  DeleteForever as DeleteForeverIcon,
   Reply as ForwardIcon,
   ContentCopy as CopyIcon,
   Translate as TranslateIcon,
   Note as NoteIcon,
 } from "@mui/icons-material";
-import { Message, editMessage, deleteMessage, addReaction } from "@/lib/chatService";
+import {
+  Message,
+  editMessage,
+  deleteMessageForMe,
+  deleteMessageForEveryone,
+  addReaction,
+} from "@/lib/chatService";
 import { useLocale } from "@/context/LocaleContext";
 
 // Common emoji reactions
@@ -51,6 +58,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   onSaveToMemo,
 }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editText, setEditText] = useState("");
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
@@ -60,7 +68,18 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 
   const isOwnMessage = message.senderId === userId;
   const canEdit = isOwnMessage && !message.deleted;
-  const canDelete = isOwnMessage && !message.deleted;
+
+  // Check if message can be deleted for everyone (within 1 hour)
+  const canDeleteForEveryone = (): boolean => {
+    if (!isOwnMessage || message.deleted || message.type === "system")
+      return false;
+    const ONE_HOUR = 60 * 60 * 1000;
+    const messageTime = message.createdAt?.toMillis() || 0;
+    const now = Date.now();
+    return now - messageTime < ONE_HOUR;
+  };
+
+  const canDeleteForMe = !message.deleted && message.type !== "system";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.text);
@@ -81,9 +100,30 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
     setEditText("");
   };
 
-  const handleDelete = async () => {
-    await deleteMessage(chatId, message.id);
-    onClose();
+  const handleDeleteForMe = async () => {
+    try {
+      await deleteMessageForMe(chatId, message.id, userId);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting message for me:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to delete message"
+      );
+    }
+  };
+
+  const handleDeleteForEveryone = async () => {
+    try {
+      await deleteMessageForEveryone(chatId, message.id, userId);
+      setDeleteConfirmOpen(false);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting message for everyone:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to delete message"
+      );
+      setDeleteConfirmOpen(false);
+    }
   };
 
   const handleReaction = async (emoji: string) => {
@@ -101,14 +141,15 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
     onClose();
   };
 
-  // Detect likely source language (simple heuristic)  
+  // Detect likely source language (simple heuristic)
   const detectSourceLanguage = (text: string): string => {
     // Check for Korean characters
     if (/[\uAC00-\uD7AF]/.test(text)) return "ko";
     // Check for Japanese (Hiragana, Katakana)
     if (/[\u3040-\u30FF]/.test(text)) return "ja";
     // Check for Chinese (CJK Unified Ideographs)
-    if (/[\u4E00-\u9FFF]/.test(text) && !/[\u3040-\u30FF]/.test(text)) return "zh-CN";
+    if (/[\u4E00-\u9FFF]/.test(text) && !/[\u3040-\u30FF]/.test(text))
+      return "zh-CN";
     // Check for Cyrillic (Russian)
     if (/[\u0400-\u04FF]/.test(text)) return "ru";
     // Check for Hindi (Devanagari)
@@ -120,30 +161,43 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   // Translation using free API
   const handleTranslate = async () => {
     if (translating) return;
-    
+
     setTranslating(true);
     try {
       // Use MyMemory API (free, no API key needed)
       const langMap: Record<string, string> = {
-        en: "en", ko: "ko", es: "es", fr: "fr",
-        zh: "zh-CN", ja: "ja", hi: "hi", de: "de", it: "it", ru: "ru"
+        en: "en",
+        ko: "ko",
+        es: "es",
+        fr: "fr",
+        zh: "zh-CN",
+        ja: "ja",
+        hi: "hi",
+        de: "de",
+        it: "it",
+        ru: "ru",
       };
       const targetLang = langMap[locale] || "en";
       const sourceLang = detectSourceLanguage(message.text);
-      
+
       // If source and target are the same, no need to translate
       if (sourceLang === targetLang) {
         setTranslatedText("(Already in target language)");
         setTranslating(false);
         return;
       }
-      
+
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(message.text)}&langpair=${sourceLang}|${targetLang}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
+          message.text
+        )}&langpair=${sourceLang}|${targetLang}`
       );
       const data = await response.json();
-      
-      if (data.responseData?.translatedText && !data.responseData.translatedText.includes("INVALID")) {
+
+      if (
+        data.responseData?.translatedText &&
+        !data.responseData.translatedText.includes("INVALID")
+      ) {
         setTranslatedText(data.responseData.translatedText);
       } else {
         setTranslatedText("Translation unavailable");
@@ -190,7 +244,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         <Divider sx={{ bgcolor: "#2A3942" }} />
 
         {/* Copy */}
-        <MenuItem 
+        <MenuItem
           onClick={handleCopy}
           sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
         >
@@ -201,7 +255,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         </MenuItem>
 
         {/* Forward */}
-        <MenuItem 
+        <MenuItem
           onClick={handleForward}
           sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
         >
@@ -212,7 +266,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         </MenuItem>
 
         {/* Save to Memo */}
-        <MenuItem 
+        <MenuItem
           onClick={handleSaveToMemo}
           sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
         >
@@ -223,7 +277,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         </MenuItem>
 
         {/* Translate */}
-        <MenuItem 
+        <MenuItem
           onClick={handleTranslate}
           disabled={translating}
           sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
@@ -231,13 +285,26 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           <ListItemIcon>
             <TranslateIcon sx={{ color: "#AEBAC1" }} />
           </ListItemIcon>
-          <ListItemText>{translating ? "Translating..." : "Translate"}</ListItemText>
+          <ListItemText>
+            {translating ? "Translating..." : "Translate"}
+          </ListItemText>
         </MenuItem>
 
         {/* Show Translated Text */}
         {translatedText && (
-          <Box sx={{ px: 2, py: 1.5, bgcolor: "#182229", mx: 1, borderRadius: 1, mb: 1 }}>
-            <Typography variant="caption" sx={{ color: "#8696A0" }}>Translation:</Typography>
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              bgcolor: "#182229",
+              mx: 1,
+              borderRadius: 1,
+              mb: 1,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: "#8696A0" }}>
+              Translation:
+            </Typography>
             <Typography sx={{ color: "#E9EDEF", fontSize: "0.875rem" }}>
               {translatedText}
             </Typography>
@@ -246,7 +313,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 
         {/* Edit (own messages only) */}
         {canEdit && (
-          <MenuItem 
+          <MenuItem
             onClick={handleEditClick}
             sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
           >
@@ -257,21 +324,38 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           </MenuItem>
         )}
 
-        {/* Delete (own messages only) */}
-        {/* Delete (own messages only) */}
-        {canDelete && [
-          <Divider key="delete-divider" sx={{ bgcolor: "#2A3942" }} />,
-          <MenuItem 
-            key="delete-item"
-            onClick={handleDelete}
+        {/* Delete Options */}
+        {(canDeleteForMe || canDeleteForEveryone()) && (
+          <Divider sx={{ bgcolor: "#2A3942" }} />
+        )}
+
+        {/* Delete for Me - Available for any message */}
+        {canDeleteForMe && (
+          <MenuItem
+            onClick={handleDeleteForMe}
             sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
           >
             <ListItemIcon>
               <DeleteIcon sx={{ color: "#F15C6D" }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: "#F15C6D" }}>Delete</ListItemText>
+            <ListItemText sx={{ color: "#F15C6D" }}>Delete for Me</ListItemText>
           </MenuItem>
-        ]}
+        )}
+
+        {/* Delete for Everyone - Only for own messages within 1 hour */}
+        {canDeleteForEveryone() && (
+          <MenuItem
+            onClick={() => setDeleteConfirmOpen(true)}
+            sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
+          >
+            <ListItemIcon>
+              <DeleteForeverIcon sx={{ color: "#F15C6D" }} />
+            </ListItemIcon>
+            <ListItemText sx={{ color: "#F15C6D" }}>
+              Delete for Everyone
+            </ListItemText>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Edit Dialog */}
@@ -307,17 +391,45 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           />
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setEditDialogOpen(false)}
             sx={{ color: "#8696A0" }}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleEditSave}
-            sx={{ color: "#00A884" }}
-          >
+          <Button onClick={handleEditSave} sx={{ color: "#00A884" }}>
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete for Everyone Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: "#233138",
+            color: "#E9EDEF",
+          },
+        }}
+      >
+        <DialogTitle>Delete for Everyone?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This message will be deleted for all participants. This action
+            cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteConfirmOpen(false)}
+            sx={{ color: "#8696A0" }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteForEveryone} sx={{ color: "#F15C6D" }}>
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
