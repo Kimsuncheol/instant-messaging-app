@@ -10,6 +10,8 @@ import {
   Videocam as VideoIcon,
   PhoneMissed as MissedCallIcon,
   AccessTime as PendingIcon,
+  CheckCircle as SelectedIcon,
+  RadioButtonUnchecked as UnselectedIcon,
 } from "@mui/icons-material";
 import { Message } from "@/lib/chatService";
 import { useDateFormat } from "@/context/DateFormatContext";
@@ -33,6 +35,10 @@ interface MessageBubbleProps {
   currentUserId?: string;
   searchTerm?: string;
   isCurrentMatch?: boolean;
+  // Selection mode props
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (messageId: string) => void;
 }
 
 // Read status types for clarity
@@ -49,12 +55,28 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   currentUserId,
   searchTerm = "",
   isCurrentMatch = false,
+  selectionMode = false,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const { formatTime } = useDateFormat();
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    if (selectionMode) {
+      e.preventDefault();
+      onToggleSelect?.(message.id);
+      return;
+    }
     e.preventDefault();
     onLongPress?.(message, e);
+  };
+
+  const handleClick = () => {
+    if (selectionMode) {
+      onToggleSelect?.(message.id);
+      return;
+    }
+    onClick?.(message);
   };
 
   // Determine read status for own messages with enhanced logic
@@ -434,15 +456,35 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       data-testid="message-bubble"
       sx={{
         display: "flex",
+        alignItems: "center",
         justifyContent: isOwn ? "flex-end" : "flex-start",
         mb: 0.5,
+        gap: 1,
       }}
     >
+      {/* Selection checkbox - shown on left for all messages in selection mode */}
+      {selectionMode && !isOwn && (
+        <Box
+          onClick={handleClick}
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {isSelected ? (
+            <SelectedIcon sx={{ color: "#00A884", fontSize: "1.25rem" }} />
+          ) : (
+            <UnselectedIcon sx={{ color: "#8696A0", fontSize: "1.25rem" }} />
+          )}
+        </Box>
+      )}
+
       <Box
-        onClick={() => onClick?.(message)}
+        onClick={handleClick}
         onContextMenu={handleContextMenu}
         sx={{
-          maxWidth: "65%",
+          maxWidth: selectionMode ? "60%" : "65%",
           px: 1.5,
           py: 0.75,
           borderRadius: isOwn ? "8px 8px 0 8px" : "8px 8px 8px 0",
@@ -526,6 +568,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           })()}
         </Box>
       </Box>
+
+      {/* Selection checkbox - shown on right for own messages in selection mode */}
+      {selectionMode && isOwn && (
+        <Box
+          onClick={handleClick}
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {isSelected ? (
+            <SelectedIcon sx={{ color: "#00A884", fontSize: "1.25rem" }} />
+          ) : (
+            <UnselectedIcon sx={{ color: "#8696A0", fontSize: "1.25rem" }} />
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

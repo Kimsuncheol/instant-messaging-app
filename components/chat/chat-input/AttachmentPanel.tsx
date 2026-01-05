@@ -15,20 +15,22 @@ import {
   Note as MemoIcon,
   Call as CallIcon,
   Videocam as VideoIcon,
+  AutoAwesome as AiSummaryIcon,
 } from "@mui/icons-material";
 
-export type AttachmentType = 
-  | "gallery" 
-  | "camera" 
-  | "location" 
-  | "contact" 
-  | "document" 
-  | "audio" 
-  | "poll" 
+export type AttachmentType =
+  | "gallery"
+  | "camera"
+  | "location"
+  | "contact"
+  | "document"
+  | "audio"
+  | "poll"
   | "event"
   | "memo"
   | "voice_call"
-  | "video_call";
+  | "video_call"
+  | "capture";
 
 interface AttachmentOption {
   type: AttachmentType;
@@ -38,13 +40,49 @@ interface AttachmentOption {
 }
 
 const attachmentOptions: AttachmentOption[] = [
-  { type: "voice_call", icon: <CallIcon />, label: "Voice Call", color: "#00A884" },
-  { type: "video_call", icon: <VideoIcon />, label: "Video Call", color: "#00A884" },
-  { type: "gallery", icon: <GalleryIcon />, label: "Gallery", color: "#7F66FF" },
+  {
+    type: "voice_call",
+    icon: <CallIcon />,
+    label: "Voice Call",
+    color: "#00A884",
+  },
+  {
+    type: "video_call",
+    icon: <VideoIcon />,
+    label: "Video Call",
+    color: "#00A884",
+  },
+  {
+    type: "capture",
+    icon: <AiSummaryIcon />,
+    label: "Capture",
+    color: "#4CAF50",
+  },
+  {
+    type: "gallery",
+    icon: <GalleryIcon />,
+    label: "Gallery",
+    color: "#7F66FF",
+  },
   { type: "camera", icon: <CameraIcon />, label: "Camera", color: "#FF6B9C" },
-  { type: "location", icon: <LocationIcon />, label: "Location", color: "#00A884" },
-  { type: "contact", icon: <ContactIcon />, label: "Contact", color: "#53BDEB" },
-  { type: "document", icon: <DocumentIcon />, label: "Document", color: "#5157AE" },
+  {
+    type: "location",
+    icon: <LocationIcon />,
+    label: "Location",
+    color: "#00A884",
+  },
+  {
+    type: "contact",
+    icon: <ContactIcon />,
+    label: "Contact",
+    color: "#53BDEB",
+  },
+  {
+    type: "document",
+    icon: <DocumentIcon />,
+    label: "Document",
+    color: "#5157AE",
+  },
   { type: "audio", icon: <AudioIcon />, label: "Audio", color: "#F5A623" },
   { type: "poll", icon: <PollIcon />, label: "Poll", color: "#FF6B6B" },
   { type: "event", icon: <EventIcon />, label: "Event", color: "#00BFA5" },
@@ -103,11 +141,13 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
             borderBottom: "1px solid #2A3942",
           }}
         >
-          <Typography sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "0.9375rem" }}>
+          <Typography
+            sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "0.9375rem" }}
+          >
             Share
           </Typography>
-          <IconButton 
-            onClick={onClose} 
+          <IconButton
+            onClick={onClose}
             size="small"
             sx={{ color: "#8696A0" }}
             aria-label="Close attachment panel"

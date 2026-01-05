@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, forwardRef } from "react";
 import { Box, Chip } from "@mui/material";
 import { Message } from "@/lib/chatService";
 import { MessageBubble } from "./MessageBubble";
@@ -20,6 +20,10 @@ interface MessageListProps {
   onSaveToMemo?: (content: string) => void;
   searchTerm?: string;
   currentMatchId?: string | null;
+  // Selection mode props
+  selectionMode?: boolean;
+  selectedMessageIds?: Set<string>;
+  onToggleSelect?: (messageId: string) => void;
 }
 
 // Helper to get date key from timestamp
@@ -69,105 +73,124 @@ const DateSeparator: React.FC<{ dateKey: string }> = ({ dateKey }) => {
   );
 };
 
-export const MessageList: React.FC<MessageListProps> = ({
-  messages,
-  currentUserId,
-  onMessageLongPress,
-  onMessageClick,
-  onPollVote,
-  onEventRSVP,
-  onSaveToMemo,
-  searchTerm = "",
-  currentMatchId = null,
-}) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const matchRef = useRef<HTMLDivElement>(null);
+export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
+  (
+    {
+      messages,
+      currentUserId,
+      onMessageLongPress,
+      onMessageClick,
+      onPollVote,
+      onEventRSVP,
+      onSaveToMemo,
+      searchTerm = "",
+      currentMatchId = null,
+      selectionMode = false,
+      selectedMessageIds = new Set(),
+      onToggleSelect,
+    },
+    ref
+  ) => {
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const matchRef = useRef<HTMLDivElement>(null);
 
-  // Group messages by date
-  const messagesWithSeparators = useMemo(() => {
-    const result: { type: "separator" | "message"; data: string | Message }[] =
-      [];
-    let lastDateKey = "";
+    // Group messages by date
+    const messagesWithSeparators = useMemo(() => {
+      const result: {
+        type: "separator" | "message";
+        data: string | Message;
+      }[] = [];
+      let lastDateKey = "";
 
-    // Filter out messages deleted by current user
-    const visibleMessages = messages.filter(
-      (msg) => !msg.deletedFor?.includes(currentUserId)
-    );
+      // Filter out messages deleted by current user
+      const visibleMessages = messages.filter(
+        (msg) => !msg.deletedFor?.includes(currentUserId)
+      );
 
-    visibleMessages.forEach((msg) => {
-      const dateKey = getDateKey(msg.createdAt);
+      visibleMessages.forEach((msg) => {
+        const dateKey = getDateKey(msg.createdAt);
 
-      if (dateKey !== lastDateKey) {
-        result.push({ type: "separator", data: dateKey });
-        lastDateKey = dateKey;
-      }
-
-      result.push({ type: "message", data: msg });
-    });
-
-    return result;
-  }, [messages, currentUserId]);
-
-  // Auto-scroll to bottom when new messages arrive, BUT only if not searching
-  useEffect(() => {
-    if (!searchTerm) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, searchTerm]);
-
-  // Scroll to current match
-  useEffect(() => {
-    if (currentMatchId && matchRef.current) {
-      matchRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [currentMatchId]);
-
-  return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        overflowY: "auto",
-        px: 3,
-        py: 2,
-        backgroundImage: "url('/chat-bg.png')",
-        backgroundSize: "contain",
-        bgcolor: "#0B141A",
-      }}
-    >
-      {messagesWithSeparators.map((item) => {
-        if (item.type === "separator") {
-          return (
-            <DateSeparator
-              key={`sep-${item.data}`}
-              dateKey={item.data as string}
-            />
-          );
+        if (dateKey !== lastDateKey) {
+          result.push({ type: "separator", data: dateKey });
+          lastDateKey = dateKey;
         }
 
-        const msg = item.data as Message;
-        const isMatch = msg.id === currentMatchId;
+        result.push({ type: "message", data: msg });
+      });
 
-        return (
-          <Box key={msg.id} ref={isMatch ? matchRef : null}>
-            {msg.type === "system" ? (
-              <SystemIndicator text={msg.text} />
-            ) : (
-              <MessageBubble
-                message={msg}
-                isOwn={msg.senderId === currentUserId}
-                onLongPress={onMessageLongPress}
-                onClick={onMessageClick}
-                onPollVote={onPollVote}
-                onEventRSVP={onEventRSVP}
-                currentUserId={currentUserId}
-                searchTerm={searchTerm}
-                isCurrentMatch={isMatch}
+      return result;
+    }, [messages, currentUserId]);
+
+    // Auto-scroll to bottom when new messages arrive, BUT only if not searching
+    useEffect(() => {
+      if (!searchTerm) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }, [messages, searchTerm]);
+
+    // Scroll to current match
+    useEffect(() => {
+      if (currentMatchId && matchRef.current) {
+        matchRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, [currentMatchId]);
+
+    return (
+      <Box
+        ref={ref}
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          px: 3,
+          py: 2,
+          backgroundImage: "url('/chat-bg.png')",
+          backgroundSize: "contain",
+          bgcolor: "#0B141A",
+        }}
+      >
+        {messagesWithSeparators.map((item) => {
+          if (item.type === "separator") {
+            return (
+              <DateSeparator
+                key={`sep-${item.data}`}
+                dateKey={item.data as string}
               />
-            )}
-          </Box>
-        );
-      })}
-      <div ref={messagesEndRef} />
-    </Box>
-  );
-};
+            );
+          }
+
+          const msg = item.data as Message;
+          const isMatch = msg.id === currentMatchId;
+
+          return (
+            <Box key={msg.id} ref={isMatch ? matchRef : null}>
+              {msg.type === "system" ? (
+                <SystemIndicator text={msg.text} />
+              ) : (
+                <MessageBubble
+                  message={msg}
+                  isOwn={msg.senderId === currentUserId}
+                  onLongPress={onMessageLongPress}
+                  onClick={onMessageClick}
+                  onPollVote={onPollVote}
+                  onEventRSVP={onEventRSVP}
+                  currentUserId={currentUserId}
+                  searchTerm={searchTerm}
+                  isCurrentMatch={isMatch}
+                  selectionMode={selectionMode}
+                  isSelected={selectedMessageIds.has(msg.id)}
+                  onToggleSelect={onToggleSelect}
+                />
+              )}
+            </Box>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </Box>
+    );
+  }
+);
+
+MessageList.displayName = "MessageList";

@@ -10,12 +10,19 @@ import {
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { AiImageModal } from "@/components/modals/AiImageModal";
 import { TranslateModal } from "@/components/modals/TranslateModal";
-import { AttachmentPanel, AttachmentTriggerButton, AttachmentType } from "@/components/chat/chat-input";
+import {
+  AttachmentPanel,
+  AttachmentTriggerButton,
+  AttachmentType,
+} from "@/components/chat/chat-input";
 import { Poll } from "@/lib/chatService";
 import { useUiStore } from "@/store/uiStore";
 
 interface MessageInputProps {
-  onSend: (text: string, poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">) => Promise<void>;
+  onSend: (
+    text: string,
+    poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">
+  ) => Promise<void>;
   disabled?: boolean;
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
@@ -27,6 +34,7 @@ interface MessageInputProps {
   onLocationClick?: () => void;
   onContactClick?: () => void;
   onMemoClick?: () => void;
+  onCaptureClick?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -42,6 +50,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onLocationClick,
   onContactClick,
   onMemoClick,
+  onCaptureClick,
 }) => {
   const footerHeightB = useUiStore((state) => state.footerHeightB);
   const [message, setMessage] = useState("");
@@ -142,21 +151,29 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         onMemoClick?.();
         setAttachPanelOpen(false);
         break;
+      case "capture":
+        onCaptureClick?.();
+        setAttachPanelOpen(false);
+        break;
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "file" | "audio") => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "image" | "file" | "audio"
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const attachmentText = type === "image" 
-      ? `📷 ${file.name}`
-      : type === "audio"
-      ? `🎵 ${file.name}`
-      : `📎 ${file.name}`;
-    
+    const attachmentText =
+      type === "image"
+        ? `📷 ${file.name}`
+        : type === "audio"
+        ? `🎵 ${file.name}`
+        : `📎 ${file.name}`;
+
     setMessage((prev) => prev + (prev ? " " : "") + attachmentText);
-    
+
     // Reset input
     e.target.value = "";
   };
@@ -184,7 +201,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       />
 
       {/* Emoji Button */}
-      <IconButton 
+      <IconButton
         sx={{ color: "#8696A0" }}
         onClick={(e) => setEmojiAnchor(e.currentTarget)}
         aria-label="Open emoji picker"
@@ -200,7 +217,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         anchorOrigin={{ vertical: "top", horizontal: "left" }}
         transformOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <EmojiPicker 
+        <EmojiPicker
           onEmojiClick={handleEmojiClick}
           theme={Theme.DARK}
           width={350}
@@ -281,10 +298,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <SendIcon />
         </IconButton>
       ) : (
-        <IconButton 
+        <IconButton
           onClick={onVoiceCall}
           aria-label="Voice message"
-          sx={{ 
+          sx={{
             color: "#8696A0",
             "&:hover": { color: "#00A884" },
           }}
@@ -298,7 +315,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         open={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
         onImageGenerated={() => {
-          setMessage((prev) => prev + (prev ? " " : "") + `🎨 [AI Generated Image]`);
+          setMessage(
+            (prev) => prev + (prev ? " " : "") + `🎨 [AI Generated Image]`
+          );
         }}
       />
 

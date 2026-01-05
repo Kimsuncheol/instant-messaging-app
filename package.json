@@ -25,6 +25,7 @@
     "@mui/x-date-pickers": "^8.23.0",
     "@react-google-maps/api": "^2.20.8",
     "dayjs": "^1.11.19",
+    "dom-to-image-more": "^3.7.2",
     "emoji-picker-react": "^4.16.1",
     "firebase": "^12.7.0",
     "fuse.js": "^7.1.0",

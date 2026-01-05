@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Box } from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Button, Typography } from "@mui/material";
 import {
   sendMessage,
   subscribeToMessages,
@@ -37,6 +37,11 @@ import { MemoModal, MemoData } from "@/components/modals/MemoModal";
 import { Event, ContactData } from "@/lib/chatService";
 import { useChatSearch } from "@/lib/hooks/useChatSearch";
 import { ChatSearchBar } from "./ChatSearchBar";
+import { MessageCaptureModal } from "@/components/modals/MessageCaptureModal";
+import { ChatSummaryModal } from "@/components/modals/ChatSummaryModal";
+import { captureElement } from "@/lib/captureService";
+import { summarizeChat } from "@/lib/aiService";
+import { getUserById as getUserProfile } from "@/lib/userService";
 
 interface ChatViewProps {
   chatId: string;
@@ -95,6 +100,25 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     currentMatchId,
   } = useChatSearch(messages);
   const [showSearch, setShowSearch] = useState(false);
+
+  // Message list ref for capture
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  // Capture modal state
+  const [captureModalOpen, setCaptureModalOpen] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+  // Summary modal state
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  // Selection mode state for partial capture
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
+    new Set()
+  );
 
   // Subscribe to chat and load other user info
   useEffect(() => {
@@ -356,6 +380,132 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     }
   };
 
+  // Capture messages handler - enters selection mode first
+  const handleCaptureClick = () => {
+    if (!selectionMode) {
+      // Enter selection mode
+      setSelectionMode(true);
+      setSelectedMessageIds(new Set());
+    }
+  };
+
+  // Toggle message selection
+  const handleToggleSelect = (messageId: string) => {
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  };
+
+  // Cancel selection mode
+  const handleCancelSelection = () => {
+    setSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  };
+
+  // Capture selected messages
+  const handleCaptureSelected = async () => {
+    if (selectedMessageIds.size === 0 || !messageListRef.current) return;
+
+    try {
+      // Create a temporary container with only selected messages
+      const selectedMessages = messages.filter((msg) =>
+        selectedMessageIds.has(msg.id)
+      );
+
+      // Create a temporary div to render selected messages
+      const tempContainer = document.createElement("div");
+      tempContainer.style.cssText =
+        "position: absolute; left: -9999px; background: #0B141A; padding: 16px; min-width: 400px; max-width: 600px;";
+
+      // Build HTML content for selected messages
+      selectedMessages.forEach((msg) => {
+        const isOwn = msg.senderId === user?.uid;
+        const bubbleDiv = document.createElement("div");
+        bubbleDiv.style.cssText = `
+          display: flex;
+          justify-content: ${isOwn ? "flex-end" : "flex-start"};
+          margin-bottom: 4px;
+        `;
+
+        const contentDiv = document.createElement("div");
+        contentDiv.style.cssText = `
+          max-width: 65%;
+          padding: 8px 12px;
+          border-radius: ${isOwn ? "8px 8px 0 8px" : "8px 8px 8px 0"};
+          background-color: ${isOwn ? "#005C4B" : "#202C33"};
+          color: #E9EDEF;
+          font-size: 14px;
+          word-break: break-word;
+        `;
+        contentDiv.textContent = msg.text;
+        bubbleDiv.appendChild(contentDiv);
+        tempContainer.appendChild(bubbleDiv);
+      });
+
+      document.body.appendChild(tempContainer);
+
+      const result = await captureElement(tempContainer);
+      document.body.removeChild(tempContainer);
+
+      setCapturedImage(result.dataUrl);
+      setCaptureModalOpen(true);
+      setSelectionMode(false);
+      setSelectedMessageIds(new Set());
+    } catch (error) {
+      console.error("Error capturing messages:", error);
+    }
+  };
+
+  // Generate summary handler
+  const handleGenerateSummary = async () => {
+    setSummaryModalOpen(true);
+    setSummaryLoading(true);
+    setSummaryError(null);
+    setSummary(null);
+
+    try {
+      // Get visible messages with sender names
+      const visibleMessages = messages.filter(
+        (msg) =>
+          !msg.deletedFor?.includes(user?.uid || "") && msg.type !== "system"
+      );
+
+      // Fetch sender names for messages
+      const senderCache: Record<string, string> = {};
+      const formattedMessages = await Promise.all(
+        visibleMessages.map(async (msg) => {
+          if (!senderCache[msg.senderId]) {
+            const profile = await getUserProfile(msg.senderId);
+            senderCache[msg.senderId] = profile?.displayName || "Unknown";
+          }
+          return {
+            sender: senderCache[msg.senderId],
+            text: msg.text,
+          };
+        })
+      );
+
+      const result = await summarizeChat(formattedMessages);
+
+      if (result.error) {
+        setSummaryError(result.error);
+      } else {
+        setSummary(result.summary || null);
+      }
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      setSummaryError("Failed to generate summary");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -391,15 +541,65 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
 
       {typingUsers.length > 0 && <TypingIndicator typingUsers={typingUsers} />}
 
+      {/* Selection Mode Action Bar */}
+      {selectionMode && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 2,
+            py: 1.5,
+            bgcolor: "#182229",
+            borderBottom: "1px solid #2A3942",
+          }}
+        >
+          <Typography sx={{ color: "#E9EDEF", fontSize: "0.9rem" }}>
+            {selectedMessageIds.size} message
+            {selectedMessageIds.size !== 1 ? "s" : ""} selected
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              onClick={handleCancelSelection}
+              sx={{
+                color: "#8696A0",
+                textTransform: "none",
+                fontSize: "0.875rem",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCaptureSelected}
+              disabled={selectedMessageIds.size === 0}
+              sx={{
+                bgcolor: "#00A884",
+                color: "#fff",
+                textTransform: "none",
+                fontSize: "0.875rem",
+                "&:hover": { bgcolor: "#008F72" },
+                "&:disabled": { bgcolor: "#2A3942", color: "#6B7C85" },
+              }}
+            >
+              Capture
+            </Button>
+          </Box>
+        </Box>
+      )}
+
       <MessageList
+        ref={messageListRef}
         messages={messages}
         currentUserId={user?.uid || ""}
-        onMessageLongPress={handleMessageLongPress}
+        onMessageLongPress={selectionMode ? undefined : handleMessageLongPress}
         onPollVote={handlePollVote}
         onEventRSVP={handleEventRSVP}
         onSaveToMemo={handleSaveToMemo}
         searchTerm={searchTerm}
         currentMatchId={currentMatchId}
+        selectionMode={selectionMode}
+        selectedMessageIds={selectedMessageIds}
+        onToggleSelect={handleToggleSelect}
       />
 
       <MessageInput
@@ -414,6 +614,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onLocationClick={() => setLocationModalOpen(true)}
         onContactClick={() => setContactModalOpen(true)}
         onMemoClick={() => setMemoModalOpen(true)}
+        onCaptureClick={handleCaptureClick}
       />
 
       {/* Profile Modal */}
@@ -502,6 +703,35 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         }}
         onSend={handleMemoSend}
         initialContent={saveToMemoContent || ""}
+      />
+
+      {/* Message Capture Modal */}
+      <MessageCaptureModal
+        open={captureModalOpen}
+        onClose={() => {
+          setCaptureModalOpen(false);
+          setCapturedImage(null);
+        }}
+        capturedImage={capturedImage}
+        chatName={
+          chat?.type === "group"
+            ? chat?.groupName || "Group Chat"
+            : otherUser?.displayName || "Chat"
+        }
+        onGenerateSummary={handleGenerateSummary}
+      />
+
+      {/* Chat Summary Modal */}
+      <ChatSummaryModal
+        open={summaryModalOpen}
+        onClose={() => {
+          setSummaryModalOpen(false);
+          setSummary(null);
+          setSummaryError(null);
+        }}
+        summary={summary}
+        loading={summaryLoading}
+        error={summaryError}
       />
     </Box>
   );

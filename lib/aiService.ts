@@ -12,6 +12,11 @@ const imageModel = getGenerativeModel(ai, {
   },
 });
 
+// Create a GenerativeModel instance for text generation (chat summary)
+const textModel = getGenerativeModel(ai, {
+  model: "gemini-2.5-flash",
+});
+
 export interface GeneratedImage {
   mimeType: string;
   data: string; // base64 encoded
@@ -109,5 +114,44 @@ export async function editImage(
       return { error: err.message };
     }
     return { error: "Failed to edit image" };
+  }
+}
+
+export interface ChatSummaryResult {
+  summary?: string;
+  error?: string;
+}
+
+/**
+ * Summarize a chat conversation using Gemini
+ * @param messages - Array of message objects with sender and text
+ */
+export async function summarizeChat(
+  messages: { sender: string; text: string }[]
+): Promise<ChatSummaryResult> {
+  try {
+    // Format messages for the prompt
+    const formattedMessages = messages
+      .map((msg) => `${msg.sender}: ${msg.text}`)
+      .join("\n");
+
+    const prompt = `Please provide a concise summary of this conversation. Focus on the key topics discussed, decisions made, and any action items mentioned. Keep it brief but informative.
+
+Conversation:
+${formattedMessages}
+
+Summary:`;
+
+    const result = await textModel.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+
+    return { summary: text };
+  } catch (err: unknown) {
+    console.error("Chat summary error:", err);
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Failed to generate summary" };
   }
 }
