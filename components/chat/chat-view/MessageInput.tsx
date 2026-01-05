@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Box, TextField, IconButton, Popover } from "@mui/material";
+import {
+  Box,
+  TextField,
+  IconButton,
+  Popover,
+  InputAdornment,
+} from "@mui/material";
 import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
@@ -200,37 +206,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         onSelect={handleAttachmentSelect}
       />
 
-      {/* Emoji Button */}
-      <IconButton
-        sx={{ color: "#8696A0" }}
-        onClick={(e) => setEmojiAnchor(e.currentTarget)}
-        aria-label="Open emoji picker"
-      >
-        <EmojiIcon />
-      </IconButton>
-
-      {/* Emoji Picker Popover */}
-      <Popover
-        open={Boolean(emojiAnchor)}
-        anchorEl={emojiAnchor}
-        onClose={() => setEmojiAnchor(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "left" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "left" }}
-      >
-        <EmojiPicker
-          onEmojiClick={handleEmojiClick}
-          theme={Theme.DARK}
-          width={350}
-          height={400}
-        />
-      </Popover>
-
-      {/* Attachment Trigger Button */}
-      <AttachmentTriggerButton
-        isOpen={attachPanelOpen}
-        onClick={() => setAttachPanelOpen(!attachPanelOpen)}
-      />
-
       {/* Hidden file inputs */}
       <input
         type="file"
@@ -265,7 +240,67 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         onKeyPress={handleKeyPress}
         disabled={disabled}
         multiline
-        maxRows={4}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <AttachmentTriggerButton
+                isOpen={attachPanelOpen}
+                onClick={() => setAttachPanelOpen(!attachPanelOpen)}
+              />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                sx={{ color: "#8696A0" }}
+                onClick={(e) => setEmojiAnchor(e.currentTarget)}
+                aria-label="Open emoji picker"
+              >
+                <EmojiIcon />
+              </IconButton>
+              <Popover
+                open={Boolean(emojiAnchor)}
+                anchorEl={emojiAnchor}
+                onClose={() => setEmojiAnchor(null)}
+                anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+              >
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  theme={Theme.DARK}
+                  width={350}
+                  height={400}
+                />
+              </Popover>
+
+              {/* Send or Mic button */}
+              {message.trim() ? (
+                <IconButton
+                  onClick={handleSend}
+                  disabled={sending || disabled}
+                  aria-label="Send message"
+                  sx={{
+                    color: "#00A884",
+                    "&:hover": { bgcolor: "rgba(0,168,132,0.1)" },
+                  }}
+                >
+                  <SendIcon />
+                </IconButton>
+              ) : (
+                <IconButton
+                  onClick={onVoiceCall}
+                  aria-label="Voice message"
+                  sx={{
+                    color: "#8696A0",
+                    "&:hover": { color: "#00A884" },
+                  }}
+                >
+                  <MicIcon />
+                </IconButton>
+              )}
+            </InputAdornment>
+          ),
+        }}
         sx={{
           "& .MuiOutlinedInput-root": {
             height: footerHeightB - paddingY * 16,
@@ -283,32 +318,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           },
         }}
       />
-
-      {/* Send or Mic button */}
-      {message.trim() ? (
-        <IconButton
-          onClick={handleSend}
-          disabled={sending || disabled}
-          aria-label="Send message"
-          sx={{
-            color: "#00A884",
-            "&:hover": { bgcolor: "rgba(0,168,132,0.1)" },
-          }}
-        >
-          <SendIcon />
-        </IconButton>
-      ) : (
-        <IconButton
-          onClick={onVoiceCall}
-          aria-label="Voice message"
-          sx={{
-            color: "#8696A0",
-            "&:hover": { color: "#00A884" },
-          }}
-        >
-          <MicIcon />
-        </IconButton>
-      )}
 
       {/* AI Image Generation Modal */}
       <AiImageModal
