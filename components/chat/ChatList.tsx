@@ -12,7 +12,7 @@ import {
   Button,
   TextField
 } from "@mui/material";
-import { Chat, subscribeToChats, getUnreadCount, renameChat, isPinned } from "@/lib/chatService";
+import { Chat, subscribeToChats, getUnreadCount, renameChat, isPinned, getPinnedAt } from "@/lib/chatService";
 import { getUserById, UserProfile } from "@/lib/userService";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
@@ -120,15 +120,27 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     }
   });
 
-  // Sort chats: pinned first, then by lastMessageAt
+  // Sort chats: pinned first (by pinnedAt desc), then by lastMessageAt desc
   const sortedChats = useMemo(() => {
     return [...filteredChats].sort((a, b) => {
       const aIsPinned = user ? isPinned(a, user.uid) : false;
       const bIsPinned = user ? isPinned(b, user.uid) : false;
       
+      // Both pinned: sort by pinnedAt descending (most recently pinned first)
+      if (aIsPinned && bIsPinned) {
+        const aPinnedAt = user ? (getPinnedAt(a, user.uid) || 0) : 0;
+        const bPinnedAt = user ? (getPinnedAt(b, user.uid) || 0) : 0;
+        return bPinnedAt - aPinnedAt;
+      }
+      
+      // One pinned, one not: pinned comes first
       if (aIsPinned && !bIsPinned) return -1;
       if (!aIsPinned && bIsPinned) return 1;
-      return 0;
+      
+      // Both not pinned: sort by lastMessageAt descending
+      const aTime = a.lastMessageAt?.toMillis?.() || 0;
+      const bTime = b.lastMessageAt?.toMillis?.() || 0;
+      return bTime - aTime;
     });
   }, [filteredChats, user]);
 

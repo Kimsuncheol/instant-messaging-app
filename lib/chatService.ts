@@ -32,7 +32,7 @@ export interface Chat {
   groupCreatorId?: string;
   groupAdminIds?: string[];
   // Chat management fields
-  pinnedBy?: string[]; // Array of user IDs who pinned this chat
+  pinnedAt?: Record<string, number>; // userId -> timestamp when pinned (ms)
   mutedBy?: string[]; // Array of user IDs who muted this chat
 }
 
@@ -365,18 +365,27 @@ export const getUnreadCount = (chat: Chat, userId: string): number => {
 // Pin a chat for a user
 export const pinChat = async (chatId: string, userId: string): Promise<void> => {
   const chatRef = doc(db, "chats", chatId);
-  await updateDoc(chatRef, {
-    pinnedBy: arrayUnion(userId),
-  });
+  const chatDoc = await getDoc(chatRef);
+  if (!chatDoc.exists()) return;
+  
+  const chatData = chatDoc.data();
+  const pinnedAt = { ...(chatData.pinnedAt || {}) };
+  pinnedAt[userId] = Date.now();
+  
+  await updateDoc(chatRef, { pinnedAt });
 };
 
 // Unpin a chat for a user
 export const unpinChat = async (chatId: string, userId: string): Promise<void> => {
   const chatRef = doc(db, "chats", chatId);
-  const { arrayRemove } = await import("firebase/firestore");
-  await updateDoc(chatRef, {
-    pinnedBy: arrayRemove(userId),
-  });
+  const chatDoc = await getDoc(chatRef);
+  if (!chatDoc.exists()) return;
+  
+  const chatData = chatDoc.data();
+  const pinnedAt = { ...(chatData.pinnedAt || {}) };
+  delete pinnedAt[userId];
+  
+  await updateDoc(chatRef, { pinnedAt });
 };
 
 /**
@@ -520,7 +529,12 @@ export const unmuteChat = async (chatId: string, userId: string): Promise<void> 
 
 // Check if chat is pinned by user
 export const isPinned = (chat: Chat, userId: string): boolean => {
-  return chat.pinnedBy?.includes(userId) || false;
+  return chat.pinnedAt?.[userId] !== undefined;
+};
+
+// Get the timestamp when user pinned the chat
+export const getPinnedAt = (chat: Chat, userId: string): number | undefined => {
+  return chat.pinnedAt?.[userId];
 };
 
 // Check if chat is muted by user
