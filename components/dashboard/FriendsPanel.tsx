@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, IconButton, Avatar, Tooltip, Badge, Typography, Divider } from "@mui/material";
-import { PersonAdd as PersonAddIcon, Group as GroupIcon } from "@mui/icons-material";
+import { Box, IconButton, Avatar, Tooltip, Badge, Typography, Divider, InputBase } from "@mui/material";
+import { PersonAdd as PersonAddIcon, Group as GroupIcon, Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material";
 import { User } from "firebase/auth";
 import { FriendsList } from "./FriendsList";
 import { SidebarUserInfo } from "./SidebarUserInfo";
@@ -24,6 +24,7 @@ export const FriendsPanel: React.FC<FriendsPanelProps> = ({
   onSelectChat,
   pendingFriendRequestCount = 0,
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
   return (
     <Box
       sx={{
@@ -92,9 +93,48 @@ export const FriendsPanel: React.FC<FriendsPanelProps> = ({
         </Box>
       </Box>
 
+      {/* Search Bar */}
+      <Box sx={{ p: 2, pb: 0 }}>
+        <Box
+          sx={{
+            bgcolor: "#202C33",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            height: 35,
+          }}
+        >
+          <SearchIcon sx={{ color: "#AEBAC1", fontSize: 20, mr: 2 }} />
+          <InputBase
+            placeholder="Search friends"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth
+            sx={{
+              color: "#E9EDEF",
+              fontSize: "0.9375rem",
+              "& ::placeholder": {
+                color: "#8696A0",
+                opacity: 1,
+              },
+            }}
+          />
+          {searchTerm && (
+            <IconButton
+              size="small"
+              onClick={() => setSearchTerm("")}
+              sx={{ color: "#AEBAC1", p: 0.5 }}
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          )}
+        </Box>
+      </Box>
+
       {/* Friends List */}
       <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        <FriendsList onSelectChat={onSelectChat} />
+        <FriendsList onSelectChat={onSelectChat} searchTerm={searchTerm} />
       </Box>
 
       {/* User Info */}

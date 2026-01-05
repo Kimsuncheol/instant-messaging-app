@@ -14,9 +14,10 @@ import { FriendListItem, FriendMenu, EmptyFriendsState, FriendFilterTabs, Friend
 interface FriendsListProps {
   onSelectChat: (chatId: string) => void;
   onSwitchToChats?: () => void;
+  searchTerm?: string;
 }
 
-export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitchToChats }) => {
+export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitchToChats, searchTerm = "" }) => {
   const { user } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({});
@@ -96,13 +97,26 @@ export const FriendsList: React.FC<FriendsListProps> = ({ onSelectChat, onSwitch
     });
   }, [friends, favouritedFriendships, friendProfiles]);
 
-  // Filter friends based on active tab
+  // Filter friends based on active tab and search term
   const filteredFriends = useMemo(() => {
+    let result = sortedFriends;
+
+    // Filter by tab
     if (activeTab === "favourites") {
-      return sortedFriends.filter(friend => favouritedFriendships.has(friend.id));
+      result = result.filter(friend => favouritedFriendships.has(friend.id));
     }
-    return sortedFriends;
-  }, [sortedFriends, activeTab, favouritedFriendships]);
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(friend => {
+        const profile = friendProfiles[friend.odUserId];
+        return profile?.displayName?.toLowerCase().includes(lowerSearch) || false;
+      });
+    }
+
+    return result;
+  }, [sortedFriends, activeTab, favouritedFriendships, searchTerm, friendProfiles]);
 
   const handleFriendClick = async (friendUserId: string) => {
     if (!user) return;
