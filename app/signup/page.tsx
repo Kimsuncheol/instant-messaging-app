@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff, Language as LanguageIcon } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
@@ -38,6 +38,58 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { locale, setLocale } = useLocale();
   const t = useTranslations();
+  
+  // Auto-detected country and dial code
+  const [detectedCountry, setDetectedCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [dialCode, setDialCode] = useState("");
+  const [countryLoading, setCountryLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Map country codes to supported locales
+  const countryToLocale: Record<string, string> = {
+    US: "en", GB: "en", AU: "en", CA: "en",
+    KR: "ko",
+    ES: "es", MX: "es", AR: "es",
+    FR: "fr", BE: "fr",
+    CN: "zh", TW: "zh", HK: "zh",
+    JP: "ja",
+    IN: "hi",
+    DE: "de", AT: "de", CH: "de",
+    IT: "it",
+    RU: "ru",
+  };
+
+  // Fetch country and dial code on mount
+  useEffect(() => {
+    const fetchPhoneCode = async () => {
+      try {
+        const res = await fetch("/api/get-phone-code");
+        if (!res.ok) throw new Error("API request failed");
+        const data = await res.json();
+        setDetectedCountry(data.country);
+        setCountryCode(data.countryCode);
+        setDialCode(data.dialCode);
+        setPhoneNumber(data.dialCode + " ");
+        
+        // Auto-select language based on country
+        const suggestedLocale = countryToLocale[data.countryCode];
+        if (suggestedLocale && suggestedLocale !== locale) {
+          setLocale(suggestedLocale as typeof locale);
+        }
+      } catch (err) {
+        console.error("Error fetching phone code:", err);
+        setDialCode("+1");
+        setDetectedCountry("United States");
+        setCountryCode("US");
+        setLocationError("Could not detect location. Defaulting to US.");
+      } finally {
+        setCountryLoading(false);
+      }
+    };
+    fetchPhoneCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +148,9 @@ export default function SignUpPage() {
           createdAt: serverTimestamp(),
         });
       }
+
+      // Sign out to force user to log in manually
+      await signOut(auth);
 
       // Redirect to login page
       router.push("/login");
@@ -199,6 +254,12 @@ export default function SignUpPage() {
           </Alert>
         )}
 
+        {locationError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {locationError}
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -225,7 +286,37 @@ export default function SignUpPage() {
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             margin="normal"
-            placeholder="+1 234 567 8900"
+            placeholder={dialCode ? `${dialCode} 234 567 8900` : "+1 234 567 8900"}
+            helperText={
+              countryLoading 
+                ? "Detecting location..." 
+                : detectedCountry 
+                  ? `🌍 ${detectedCountry} (${countryCode}) • ${dialCode}` 
+                  : ""
+            }
+            FormHelperTextProps={{ sx: { color: "#00A884", fontWeight: 500 } }}
+            InputProps={{
+              startAdornment: detectedCountry && (
+                <InputAdornment position="start">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      bgcolor: "#00A884",
+                      color: "#fff",
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      mr: 0.5,
+                    }}
+                  >
+                    {countryCode}
+                  </Box>
+                </InputAdornment>
+              ),
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "#2A3942",

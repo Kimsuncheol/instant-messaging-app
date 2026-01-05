@@ -19,6 +19,7 @@ interface MessageInputProps {
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
   onVoiceCall?: () => void;
+  onVideoCall?: () => void;
   onPollCreate?: () => void;
   onEventCreate?: () => void;
   onCameraClick?: () => void;
@@ -33,6 +34,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onTypingStart,
   onTypingEnd,
   onVoiceCall,
+  onVideoCall,
   onPollCreate,
   onEventCreate,
   onCameraClick,
@@ -99,6 +101,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     switch (type) {
       case "gallery":
         imageInputRef.current?.click();
+        break;
+      case "voice_call":
+        onVoiceCall?.();
+        setAttachPanelOpen(false);
+        break;
+      case "video_call":
+        onVideoCall?.();
+        setAttachPanelOpen(false);
         break;
       case "camera":
         onCameraClick?.();

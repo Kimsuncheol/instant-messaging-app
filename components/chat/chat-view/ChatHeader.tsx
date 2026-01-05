@@ -6,8 +6,6 @@ import {
   ArrowBack as BackIcon,
   MoreVert as MoreIcon,
   Search as SearchIcon,
-  Call as CallIcon,
-  Videocam as VideoIcon,
 } from "@mui/icons-material";
 import { UserProfile, getUserById } from "@/lib/userService";
 import { Chat } from "@/lib/chatService";
@@ -21,8 +19,6 @@ interface ChatHeaderProps {
   onAvatarClick?: () => void;
   onSearchClick?: () => void;
   onMenuClick?: () => void;
-  onVoiceCall?: () => void;
-  onVideoCall?: () => void;
 }
 
 // Format last seen time
@@ -46,8 +42,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onAvatarClick,
   onSearchClick,
   onMenuClick,
-  onVoiceCall,
-  onVideoCall,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [participants, setParticipants] = useState<UserProfile[]>([]);
@@ -162,27 +156,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           </Typography>
         </Box>
         
-        {/* Voice Call Button */}
-        <IconButton 
-          onClick={onVoiceCall} 
-          sx={{ 
-            color: "#AEBAC1",
-            "&:hover": { color: "#00A884" },
-          }}
-        >
-          <CallIcon />
-        </IconButton>
-        
-        {/* Video Call Button */}
-        <IconButton 
-          onClick={onVideoCall} 
-          sx={{ 
-            color: "#AEBAC1",
-            "&:hover": { color: "#00A884" },
-          }}
-        >
-          <VideoIcon />
-        </IconButton>
+
         
         <IconButton onClick={onSearchClick} sx={{ color: "#AEBAC1" }}>
           <SearchIcon />

@@ -13,6 +13,8 @@ import {
   Event as EventIcon,
   Close as CloseIcon,
   Note as MemoIcon,
+  Call as CallIcon,
+  Videocam as VideoIcon,
 } from "@mui/icons-material";
 
 export type AttachmentType = 
@@ -24,7 +26,9 @@ export type AttachmentType =
   | "audio" 
   | "poll" 
   | "event"
-  | "memo";
+  | "memo"
+  | "voice_call"
+  | "video_call";
 
 interface AttachmentOption {
   type: AttachmentType;
@@ -34,6 +38,8 @@ interface AttachmentOption {
 }
 
 const attachmentOptions: AttachmentOption[] = [
+  { type: "voice_call", icon: <CallIcon />, label: "Voice Call", color: "#00A884" },
+  { type: "video_call", icon: <VideoIcon />, label: "Video Call", color: "#00A884" },
   { type: "gallery", icon: <GalleryIcon />, label: "Gallery", color: "#7F66FF" },
   { type: "camera", icon: <CameraIcon />, label: "Camera", color: "#FF6B9C" },
   { type: "location", icon: <LocationIcon />, label: "Location", color: "#00A884" },

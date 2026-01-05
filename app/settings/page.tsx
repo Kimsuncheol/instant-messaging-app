@@ -19,6 +19,7 @@ import { SettingsAppearanceSection } from "./_components/SettingsAppearanceSecti
 import { SettingsLanguageSection } from "./_components/SettingsLanguageSection";
 import { SettingsOptionsList } from "./_components/SettingsOptionsList";
 import { SettingsLocaleSection } from "./_components/SettingsLocaleSection";
+import { SettingsCountrySection } from "./_components/SettingsCountrySection";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -71,6 +72,14 @@ export default function SettingsPage() {
         textPrimary={textPrimary} 
         textSecondary={textSecondary} 
         sectionTitle={t('settings.appearance')}
+      />
+
+      <Divider sx={{ borderColor: dividerColor }} />
+
+      <SettingsCountrySection
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        sectionTitle="Location"
       />
 
       <Divider sx={{ borderColor: dividerColor }} />

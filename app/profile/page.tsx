@@ -16,7 +16,8 @@ import { ConfirmPasswordModal } from "@/components/modals/ConfirmPasswordModal";
 import { EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { DeleteForever as DeleteIcon } from "@mui/icons-material";
+import { DeleteForever as DeleteIcon, Logout as LogoutIcon } from "@mui/icons-material";
+import { logout } from "@/lib/authService";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -94,6 +95,15 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: bgColor }}>
       <ProfileHeader headerBg={headerBg} />
@@ -143,6 +153,26 @@ export default function ProfilePage() {
       />
 
       <Divider sx={{ borderColor: dividerColor }} />
+
+      {/* Sign Out Section */}
+      <Box sx={{ px: 3, py: 3 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<LogoutIcon />}
+          onClick={handleSignOut}
+          sx={{
+            color: "#00A884",
+            borderColor: "#00A884",
+            "&:hover": {
+              borderColor: "#00A884",
+              bgcolor: isDark ? "rgba(0, 168, 132, 0.1)" : "rgba(0, 168, 132, 0.05)",
+            },
+          }}
+        >
+          Sign Out
+        </Button>
+      </Box>
 
       {/* Delete Account Section */}
       <Box sx={{ px: 3, py: 3 }}>

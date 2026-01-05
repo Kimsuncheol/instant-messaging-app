@@ -4,7 +4,6 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { Box, Chip } from "@mui/material";
 import { Message } from "@/lib/chatService";
 import { MessageBubble } from "./MessageBubble";
-import { useDateFormat } from "@/context/DateFormatContext";
 import { Timestamp } from "firebase/firestore";
 
 interface MessageListProps {
@@ -14,6 +13,9 @@ interface MessageListProps {
   onMessageClick?: (message: Message) => void;
   onPollVote?: (messageId: string, optionId: string) => void;
   onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
+  onSaveToMemo?: (content: string) => void;
+  searchTerm?: string;
+  currentMatchId?: string | null;
 }
 
 // Helper to get date key from timestamp
@@ -70,8 +72,12 @@ export const MessageList: React.FC<MessageListProps> = ({
   onMessageClick,
   onPollVote,
   onEventRSVP,
+  onSaveToMemo,
+  searchTerm = "",
+  currentMatchId = null,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const matchRef = useRef<HTMLDivElement>(null);
 
   // Group messages by date
   const messagesWithSeparators = useMemo(() => {
@@ -92,10 +98,19 @@ export const MessageList: React.FC<MessageListProps> = ({
     return result;
   }, [messages]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive, BUT only if not searching
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!searchTerm) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, searchTerm]);
+
+  // Scroll to current match
+  useEffect(() => {
+    if (currentMatchId && matchRef.current) {
+      matchRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [currentMatchId]);
 
   return (
     <Box
@@ -120,17 +135,22 @@ export const MessageList: React.FC<MessageListProps> = ({
         }
         
         const msg = item.data as Message;
+        const isMatch = msg.id === currentMatchId;
+
         return (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isOwn={msg.senderId === currentUserId}
-            onLongPress={onMessageLongPress}
-            onClick={onMessageClick}
-            onPollVote={onPollVote}
-            onEventRSVP={onEventRSVP}
-            currentUserId={currentUserId}
-          />
+          <Box key={msg.id} ref={isMatch ? matchRef : null}>
+            <MessageBubble
+              message={msg}
+              isOwn={msg.senderId === currentUserId}
+              onLongPress={onMessageLongPress}
+              onClick={onMessageClick}
+              onPollVote={onPollVote}
+              onEventRSVP={onEventRSVP}
+              currentUserId={currentUserId}
+              searchTerm={searchTerm}
+              isCurrentMatch={isMatch}
+            />
+          </Box>
         );
       })}
       <div ref={messagesEndRef} />

@@ -21,6 +21,8 @@ import { LocationModal, LocationData } from "@/components/modals/LocationModal";
 import { ContactPickerModal } from "@/components/modals/ContactPickerModal";
 import { MemoModal, MemoData } from "@/components/modals/MemoModal";
 import { Event, ContactData } from "@/lib/chatService";
+import { useChatSearch } from "@/lib/hooks/useChatSearch";
+import { ChatSearchBar } from "./ChatSearchBar";
 
 interface ChatViewProps {
   chatId: string;
@@ -59,6 +61,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   // Save to memo state
   const [saveToMemoContent, setSaveToMemoContent] = useState<string | null>(null);
+
+  const { 
+    searchTerm, 
+    handleSearch, 
+    matches, 
+    currentMatchIndex, 
+    navigate, 
+    clearSearch,
+    currentMatchId 
+  } = useChatSearch(messages);
+  const [showSearch, setShowSearch] = useState(false);
 
   // Load chat and other user info
   useEffect(() => {
@@ -272,9 +285,23 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         otherUser={otherUser}
         onBack={onBack}
         onAvatarClick={handleAvatarClick}
-        onVoiceCall={handleVoiceCall}
-        onVideoCall={handleVideoCall}
+        onSearchClick={() => setShowSearch(true)}
       />
+
+      {showSearch && (
+        <ChatSearchBar 
+          searchTerm={searchTerm}
+          onSearch={handleSearch}
+          currentMatchIndex={currentMatchIndex}
+          totalMatches={matches.length}
+          onNext={() => navigate('next')}
+          onPrev={() => navigate('prev')}
+          onClose={() => {
+            setShowSearch(false);
+            clearSearch();
+          }}
+        />
+      )}
 
       {typingUsers.length > 0 && <TypingIndicator typingUsers={typingUsers} />}
 
@@ -285,6 +312,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onPollVote={handlePollVote}
         onEventRSVP={handleEventRSVP}
         onSaveToMemo={handleSaveToMemo}
+        searchTerm={searchTerm}
+        currentMatchId={currentMatchId}
       />
 
       <MessageInput
@@ -292,6 +321,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onTypingStart={handleTypingStart}
         onTypingEnd={handleTypingEnd}
         onVoiceCall={handleVoiceCall}
+        onVideoCall={handleVideoCall}
         onPollCreate={() => setPollModalOpen(true)}
         onEventCreate={() => setEventModalOpen(true)}
         onCameraClick={() => setCameraModalOpen(true)}

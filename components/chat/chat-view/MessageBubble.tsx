@@ -28,6 +28,8 @@ interface MessageBubbleProps {
   onPollVote?: (messageId: string, optionId: string) => void;
   onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
   currentUserId?: string;
+  searchTerm?: string;
+  isCurrentMatch?: boolean;
 }
 
 // Read status types for clarity
@@ -42,6 +44,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onPollVote,
   onEventRSVP,
   currentUserId,
+  searchTerm = "",
+  isCurrentMatch = false,
 }) => {
   const { formatTime } = useDateFormat();
 
@@ -144,6 +148,31 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </Box>
         ))}
       </Box>
+    );
+  };
+
+  // Highlight text function
+  const renderText = (text: string) => {
+    if (!searchTerm.trim()) return text;
+
+    const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === searchTerm.toLowerCase() ? (
+        <span 
+          key={index} 
+          style={{ 
+            backgroundColor: isCurrentMatch ? '#FFD700' : '#FFFF00', // Gold for current, Yellow for others
+            color: '#000',
+            borderRadius: '2px',
+            padding: '0 2px',
+            fontWeight: isCurrentMatch ? 'bold' : 'normal'
+          }}
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      )  
     );
   };
 
@@ -385,6 +414,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           position: "relative",
           cursor: onLongPress || onClick ? "pointer" : "default",
           "&:hover": onLongPress || onClick ? { opacity: 0.9 } : {},
+          border: isCurrentMatch ? '2px solid #00A884' : 'none', // Extra visual cue for current match
+          transition: 'all 0.3s ease',
         }}
       >
         {/* Forwarded indicator */}
@@ -405,7 +436,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             whiteSpace: "pre-wrap",
           }}
         >
-          {message.text}
+          {renderText(message.text)}
         </Typography>
         
         {/* Reactions */}
