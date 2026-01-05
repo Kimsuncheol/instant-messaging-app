@@ -1,21 +1,32 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { 
-  Box, 
-  List, 
+import {
+  Box,
+  List,
   Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  TextField
+  TextField,
 } from "@mui/material";
-import { Chat, subscribeToChats, getUnreadCount, renameChat, isPinned, getPinnedAt } from "@/lib/chatService";
+import {
+  Chat,
+  subscribeToChats,
+  getUnreadCount,
+  renameChat,
+  isPinned,
+  getPinnedAt,
+  isFavorited,
+} from "@/lib/chatService";
 import { getUserById, UserProfile } from "@/lib/userService";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
+import {
+  subscribeToMultiplePresences,
+  UserPresence,
+} from "@/lib/presenceService";
 import { ChatContextMenu } from "./ChatContextMenu";
 
 // Sub-components
@@ -28,18 +39,25 @@ interface ChatListProps {
   searchTerm: string;
 }
 
-export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId, searchTerm }) => {
+export const ChatList: React.FC<ChatListProps> = ({
+  onSelectChat,
+  selectedChatId,
+  searchTerm,
+}) => {
   const { user } = useAuth();
   const [chats, setChats] = useState<Chat[]>([]);
   const [chatUsers, setChatUsers] = useState<Record<string, UserProfile>>({});
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
-  
+
   // Context menu state
-  const [contextMenuAnchor, setContextMenuAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [contextMenuChat, setContextMenuChat] = useState<Chat | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
@@ -47,11 +65,11 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
   // Subscribe to chats
   useEffect(() => {
     if (!user) return;
-    
+
     const unsubscribe = subscribeToChats(user.uid, (chatList) => {
       setChats(chatList);
     });
-    
+
     return () => unsubscribe();
   }, [user]);
 
@@ -61,22 +79,22 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
     const loadUsers = async () => {
       const userIds = chats
-        .flatMap(chat => chat.participants)
-        .filter(id => id !== user.uid);
-      
+        .flatMap((chat) => chat.participants)
+        .filter((id) => id !== user.uid);
+
       const uniqueIds = [...new Set(userIds)];
       const users: Record<string, UserProfile> = {};
-      
+
       await Promise.all(
         uniqueIds.map(async (id) => {
           const userData = await getUserById(id);
           if (userData) users[id] = userData;
         })
       );
-      
+
       setChatUsers(users);
     };
-    
+
     loadUsers();
   }, [chats, user]);
 
@@ -90,12 +108,12 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
   const getOtherUser = (chat: Chat): UserProfile | undefined => {
     if (!user) return undefined;
-    const otherUserId = chat.participants.find(p => p !== user.uid);
+    const otherUserId = chat.participants.find((p) => p !== user.uid);
     return otherUserId ? chatUsers[otherUserId] : undefined;
   };
 
   // Filter chats based on search term and active tab
-  const filteredChats = chats.filter(chat => {
+  const filteredChats = chats.filter((chat) => {
     // Mission 3: Filter out chatrooms without any message
     if (!chat.lastMessage || !chat.lastMessageAt) {
       return false;
@@ -104,8 +122,11 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     // Search filter
     if (searchTerm.trim()) {
       const otherUser = getOtherUser(chat);
-      const matchesSearch = otherUser?.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             otherUser?.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        otherUser?.displayName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        otherUser?.email.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
     }
 
@@ -118,6 +139,10 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
         const unreadCount = user ? getUnreadCount(chat, user.uid) : 0;
         return unreadCount > 0;
       }
+      case "favourites": {
+        // Show only favorited chats
+        return user ? isFavorited(chat, user.uid) : false;
+      }
       case "all":
       default:
         return true;
@@ -129,18 +154,18 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     return [...filteredChats].sort((a, b) => {
       const aIsPinned = user ? isPinned(a, user.uid) : false;
       const bIsPinned = user ? isPinned(b, user.uid) : false;
-      
+
       // Both pinned: sort by pinnedAt descending (most recently pinned first)
       if (aIsPinned && bIsPinned) {
-        const aPinnedAt = user ? (getPinnedAt(a, user.uid) || 0) : 0;
-        const bPinnedAt = user ? (getPinnedAt(b, user.uid) || 0) : 0;
+        const aPinnedAt = user ? getPinnedAt(a, user.uid) || 0 : 0;
+        const bPinnedAt = user ? getPinnedAt(b, user.uid) || 0 : 0;
         return bPinnedAt - aPinnedAt;
       }
-      
+
       // One pinned, one not: pinned comes first
       if (aIsPinned && !bIsPinned) return -1;
       if (!aIsPinned && bIsPinned) return 1;
-      
+
       // Both not pinned: sort by lastMessageAt descending
       const aTime = a.lastMessageAt?.toMillis?.() || 0;
       const bTime = b.lastMessageAt?.toMillis?.() || 0;
@@ -149,13 +174,16 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
   }, [filteredChats, user]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#111B21" }}>
-
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        bgcolor: "#111B21",
+      }}
+    >
       {/* Filter Tabs */}
-      <ChatFilterTabs 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
+      <ChatFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Chat List */}
       <List sx={{ flexGrow: 1, overflowY: "auto", py: 0 }}>
@@ -170,9 +198,11 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
         ) : (
           sortedChats.map((chat) => {
             const isGroup = chat.type === "group";
-            const otherUserId = !isGroup ? chat.participants.find(p => p !== user?.uid) : undefined;
+            const otherUserId = !isGroup
+              ? chat.participants.find((p) => p !== user?.uid)
+              : undefined;
             const chatIsPinned = user ? isPinned(chat, user.uid) : false;
-            
+
             const handleContextMenu = (e: React.MouseEvent) => {
               e.preventDefault();
               setContextMenuAnchor({ top: e.clientY, left: e.clientX });
@@ -202,6 +232,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
                 getOtherUser={getOtherUser}
                 presence={otherUserId ? presences[otherUserId] : undefined}
                 isPinned={chatIsPinned}
+                isFavorited={user ? isFavorited(chat, user.uid) : false}
                 onContextMenu={handleContextMenu}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
@@ -232,8 +263,8 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
       />
 
       {/* Rename Dialog */}
-      <Dialog 
-        open={renameDialogOpen} 
+      <Dialog
+        open={renameDialogOpen}
         onClose={() => setRenameDialogOpen(false)}
         PaperProps={{
           sx: {
@@ -262,7 +293,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
           />
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setRenameDialogOpen(false)}
             sx={{ color: "#8696A0" }}
           >

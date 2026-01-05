@@ -19,15 +19,20 @@ import {
   Delete as DeleteIcon,
   Call as CallIcon,
   Videocam as VideoIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
 } from "@mui/icons-material";
 import {
   Chat,
   isPinned,
   isMuted,
+  isFavorited,
   pinChat,
   unpinChat,
   muteChat,
   unmuteChat,
+  favoriteChat,
+  unfavoriteChat,
   markMessagesAsRead,
   leaveChat,
   deleteChat,
@@ -58,6 +63,7 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
 
   const pinned = isPinned(chat, userId);
   const muted = isMuted(chat, userId);
+  const favorited = isFavorited(chat, userId);
   const isGroup = chat.type === "group";
 
   const handlePin = async () => {
@@ -82,6 +88,19 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
       }
     } catch (error) {
       console.error("Error toggling mute:", error);
+    }
+    onClose();
+  };
+
+  const handleFavorite = async () => {
+    try {
+      if (favorited) {
+        await unfavoriteChat(chat.id, userId);
+      } else {
+        await favoriteChat(chat.id, userId);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
     }
     onClose();
   };
@@ -161,6 +180,19 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
         <ListItemText>{muted ? "Unmute" : "Mute"}</ListItemText>
       </MenuItem>
 
+      <MenuItem onClick={handleFavorite}>
+        <ListItemIcon>
+          {favorited ? (
+            <StarIcon sx={{ color: "#FFC107" }} />
+          ) : (
+            <StarBorderIcon sx={{ color: "#AEBAC1" }} />
+          )}
+        </ListItemIcon>
+        <ListItemText>
+          {favorited ? "Remove from Favourites" : "Add to Favourites"}
+        </ListItemText>
+      </MenuItem>
+
       <MenuItem onClick={handleMarkAsRead}>
         <ListItemIcon>
           <MarkReadIcon sx={{ color: "#00A884" }} />
@@ -170,7 +202,12 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
 
       {/* Call options for private chats */}
       {!isGroup && (
-        <MenuItem onClick={() => { onVoiceCall?.(); onClose(); }}>
+        <MenuItem
+          onClick={() => {
+            onVoiceCall?.();
+            onClose();
+          }}
+        >
           <ListItemIcon>
             <CallIcon sx={{ color: "#00A884" }} />
           </ListItemIcon>
@@ -179,7 +216,12 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
       )}
 
       {!isGroup && (
-        <MenuItem onClick={() => { onVideoCall?.(); onClose(); }}>
+        <MenuItem
+          onClick={() => {
+            onVideoCall?.();
+            onClose();
+          }}
+        >
           <ListItemIcon>
             <VideoIcon sx={{ color: "#00A884" }} />
           </ListItemIcon>

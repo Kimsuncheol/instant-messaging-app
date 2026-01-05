@@ -1,8 +1,15 @@
 "use client";
 
 import React from "react";
-import { Box, ListItemButton, ListItemAvatar, ListItemText, Avatar, Typography } from "@mui/material";
-import { PushPin as PinIcon } from "@mui/icons-material";
+import {
+  Box,
+  ListItemButton,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
+  Typography,
+} from "@mui/material";
+import { PushPin as PinIcon, Star as StarIcon } from "@mui/icons-material";
 import { Chat, getUnreadCount } from "@/lib/chatService";
 import { UserProfile } from "@/lib/userService";
 import { ActiveStatusBadge } from "@/components/shared/ActiveStatusBadge";
@@ -18,6 +25,7 @@ interface ChatListItemProps {
   getOtherUser: (chat: Chat) => UserProfile | undefined;
   presence?: UserPresence;
   isPinned?: boolean;
+  isFavorited?: boolean;
   onContextMenu: (e: React.MouseEvent) => void;
   onTouchStart: () => void;
   onTouchEnd: () => void;
@@ -31,24 +39,23 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   getOtherUser,
   presence,
   isPinned,
+  isFavorited,
   onContextMenu,
   onTouchStart,
   onTouchEnd,
 }) => {
   const { formatRelativeTime } = useDateFormat();
-  
+
   const isGroup = chat.type === "group";
   const otherUser = !isGroup ? getOtherUser(chat) : undefined;
-  
+
   // For groups, display group info
-  const displayName = isGroup 
-    ? (chat.groupName || "Unnamed Group") 
-    : (otherUser?.displayName || "Unknown User");
-  const displayPhoto = isGroup 
-    ? chat.groupPhotoURL 
-    : otherUser?.photoURL;
-  const displayInitial = isGroup 
-    ? (chat.groupName?.[0] || "G") 
+  const displayName = isGroup
+    ? chat.groupName || "Unnamed Group"
+    : otherUser?.displayName || "Unknown User";
+  const displayPhoto = isGroup ? chat.groupPhotoURL : otherUser?.photoURL;
+  const displayInitial = isGroup
+    ? chat.groupName?.[0] || "G"
     : otherUser?.displayName?.[0];
 
   return (
@@ -63,7 +70,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
         py: 1.5,
         borderBottom: "1px solid #222D34",
         "&:hover": { bgcolor: "#202C33" },
-        "&.Mui-selected": { 
+        "&.Mui-selected": {
           bgcolor: "#2A3942",
           "&:hover": { bgcolor: "#2A3942" },
         },
@@ -93,24 +100,55 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
         primaryTypographyProps={{ component: "div" }}
         secondaryTypographyProps={{ component: "div" }}
         primary={
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Typography sx={{ color: "#E9EDEF", fontWeight: 400, fontSize: "1rem" }}>
+              <Typography
+                sx={{ color: "#E9EDEF", fontWeight: 400, fontSize: "1rem" }}
+              >
                 {displayName}
               </Typography>
               {isPinned && (
-                <PinIcon sx={{ fontSize: "0.875rem", color: "#8696A0", transform: "rotate(45deg)" }} />
+                <PinIcon
+                  sx={{
+                    fontSize: "0.875rem",
+                    color: "#8696A0",
+                    transform: "rotate(45deg)",
+                  }}
+                />
+              )}
+              {isFavorited && (
+                <StarIcon sx={{ fontSize: "0.875rem", color: "#FFC107" }} />
               )}
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography sx={{ color: user && getUnreadCount(chat, user.uid) > 0 ? "#00A884" : "#8696A0", fontSize: "0.75rem" }}>
+              <Typography
+                sx={{
+                  color:
+                    user && getUnreadCount(chat, user.uid) > 0
+                      ? "#00A884"
+                      : "#8696A0",
+                  fontSize: "0.75rem",
+                }}
+              >
                 {formatRelativeTime(chat.lastMessageAt)}
               </Typography>
             </Box>
           </Box>
         }
         secondary={
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Typography
               component="span"
               sx={{
@@ -122,9 +160,10 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
                 flex: 1,
               }}
             >
-              {isGroup && chat.participants.length > 0 
-                ? `${chat.participants.length} members` 
-                : ""} {chat.lastMessage || (isGroup ? "" : "No messages yet")}
+              {isGroup && chat.participants.length > 0
+                ? `${chat.participants.length} members`
+                : ""}{" "}
+              {chat.lastMessage || (isGroup ? "" : "No messages yet")}
             </Typography>
             {user && getUnreadCount(chat, user.uid) > 0 && (
               <Box

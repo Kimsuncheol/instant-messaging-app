@@ -3,16 +3,16 @@
 import React from "react";
 import { Box } from "@mui/material";
 
-export type TabFilter = "all" | "unread" | "groups";
+export type TabFilter = "all" | "unread" | "groups" | "favourites";
 
 interface ChatFilterTabsProps {
   activeTab: TabFilter;
   onTabChange: (tab: TabFilter) => void;
 }
 
-export const ChatFilterTabs: React.FC<ChatFilterTabsProps> = ({ 
-  activeTab, 
-  onTabChange 
+export const ChatFilterTabs: React.FC<ChatFilterTabsProps> = ({
+  activeTab,
+  onTabChange,
 }) => {
   const getTabStyle = (tab: TabFilter) => ({
     px: 2,
@@ -36,6 +36,12 @@ export const ChatFilterTabs: React.FC<ChatFilterTabsProps> = ({
       </Box>
       <Box sx={getTabStyle("groups")} onClick={() => onTabChange("groups")}>
         Groups
+      </Box>
+      <Box
+        sx={getTabStyle("favourites")}
+        onClick={() => onTabChange("favourites")}
+      >
+        Favourites
       </Box>
     </Box>
   );

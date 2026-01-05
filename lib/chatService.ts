@@ -34,6 +34,7 @@ export interface Chat {
   // Chat management fields
   pinnedAt?: Record<string, number>; // userId -> timestamp when pinned (ms)
   mutedBy?: string[]; // Array of user IDs who muted this chat
+  favouritedBy?: string[]; // Array of user IDs who favorited this chat
 }
 
 export interface PollOption {
@@ -540,6 +541,28 @@ export const getPinnedAt = (chat: Chat, userId: string): number | undefined => {
 // Check if chat is muted by user
 export const isMuted = (chat: Chat, userId: string): boolean => {
   return chat.mutedBy?.includes(userId) || false;
+};
+
+// Favorite a chat for a user
+export const favoriteChat = async (chatId: string, userId: string): Promise<void> => {
+  const chatRef = doc(db, "chats", chatId);
+  await updateDoc(chatRef, {
+    favouritedBy: arrayUnion(userId),
+  });
+};
+
+// Unfavorite a chat for a user
+export const unfavoriteChat = async (chatId: string, userId: string): Promise<void> => {
+  const chatRef = doc(db, "chats", chatId);
+  const { arrayRemove } = await import("firebase/firestore");
+  await updateDoc(chatRef, {
+    favouritedBy: arrayRemove(userId),
+  });
+};
+
+// Check if chat is favorited by user
+export const isFavorited = (chat: Chat, userId: string): boolean => {
+  return chat.favouritedBy?.includes(userId) || false;
 };
 
 // Rename a group chat
