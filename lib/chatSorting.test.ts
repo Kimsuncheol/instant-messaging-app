@@ -58,7 +58,7 @@ describe("Chat Sorting with Pinned Reordering", () => {
   const userId = "user1";
   
   // Create base chats ordered by lastMessageAt: A, B, C, D, E
-  const createChats = () => [
+  const createChats = (): Chat[] => [
     { id: "A", participants: [], lastMessage: "", lastMessageAt: mockTimestamp(5000), type: "private" as const },
     { id: "B", participants: [], lastMessage: "", lastMessageAt: mockTimestamp(4000), type: "private" as const },
     { id: "C", participants: [], lastMessage: "", lastMessageAt: mockTimestamp(3000), type: "private" as const },

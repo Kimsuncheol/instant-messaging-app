@@ -170,21 +170,21 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
 
       {/* Call options for private chats */}
       {!isGroup && (
-        <>
-          <MenuItem onClick={() => { onVoiceCall?.(); onClose(); }}>
-            <ListItemIcon>
-              <CallIcon sx={{ color: "#00A884" }} />
-            </ListItemIcon>
-            <ListItemText>Voice Call</ListItemText>
-          </MenuItem>
+        <MenuItem onClick={() => { onVoiceCall?.(); onClose(); }}>
+          <ListItemIcon>
+            <CallIcon sx={{ color: "#00A884" }} />
+          </ListItemIcon>
+          <ListItemText>Voice Call</ListItemText>
+        </MenuItem>
+      )}
 
-          <MenuItem onClick={() => { onVideoCall?.(); onClose(); }}>
-            <ListItemIcon>
-              <VideoIcon sx={{ color: "#00A884" }} />
-            </ListItemIcon>
-            <ListItemText>Video Call</ListItemText>
-          </MenuItem>
-        </>
+      {!isGroup && (
+        <MenuItem onClick={() => { onVideoCall?.(); onClose(); }}>
+          <ListItemIcon>
+            <VideoIcon sx={{ color: "#00A884" }} />
+          </ListItemIcon>
+          <ListItemText>Video Call</ListItemText>
+        </MenuItem>
       )}
 
       <Divider sx={{ bgcolor: "#2A3942" }} />
