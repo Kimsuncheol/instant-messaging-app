@@ -19,21 +19,20 @@ import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceServic
 import { ChatContextMenu } from "./ChatContextMenu";
 
 // Sub-components
-import { ChatSearchBar } from "./ChatSearchBar";
 import { ChatFilterTabs, TabFilter } from "./ChatFilterTabs";
 import { ChatListItem } from "./ChatListItem";
 
 interface ChatListProps {
   onSelectChat: (chatId: string) => void;
   selectedChatId?: string;
+  searchTerm: string;
 }
 
-export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId }) => {
+export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId, searchTerm }) => {
   const { user } = useAuth();
   const [chats, setChats] = useState<Chat[]>([]);
   const [chatUsers, setChatUsers] = useState<Record<string, UserProfile>>({});
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   
   // Context menu state
@@ -97,6 +96,11 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
   // Filter chats based on search term and active tab
   const filteredChats = chats.filter(chat => {
+    // Mission 3: Filter out chatrooms without any message
+    if (!chat.lastMessage || !chat.lastMessageAt) {
+      return false;
+    }
+
     // Search filter
     if (searchTerm.trim()) {
       const otherUser = getOtherUser(chat);
@@ -146,11 +150,6 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#111B21" }}>
-      {/* Search Bar */}
-      <ChatSearchBar 
-        searchTerm={searchTerm} 
-        onSearchChange={setSearchTerm} 
-      />
 
       {/* Filter Tabs */}
       <ChatFilterTabs 

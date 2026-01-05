@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Box, Avatar, Typography, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import { User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
+import { useUiStore } from "@/store/uiStore";
 
 interface SidebarUserInfoProps {
   user: User;
@@ -15,9 +16,20 @@ export const SidebarUserInfo: React.FC<SidebarUserInfoProps> = ({ user }) => {
   const router = useRouter();
   const { resolvedMode } = useTheme();
   const isDark = resolvedMode === "dark";
+  
+  const ref = useRef<HTMLDivElement>(null);
+  const setFooterHeightB = useUiStore((state) => state.setFooterHeightB);
+
+  useEffect(() => {
+    if (ref.current) {
+      const height = ref.current.offsetHeight;
+      setFooterHeightB(height);
+    }
+  }, [setFooterHeightB]);
 
   return (
     <Box 
+      ref={ref}
       sx={{ 
         p: 2, 
         display: "flex", 

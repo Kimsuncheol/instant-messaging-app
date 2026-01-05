@@ -12,6 +12,7 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { AddFriendModal } from "@/components/modals/AddFriendModal";
 import { CreateGroupModal } from "@/components/modals/CreateGroupModal";
 import { useChatStore } from "@/store/chatStore";
+import { useUiStore } from "@/store/uiStore";
 import { useDevice } from "@/context/DeviceContext";
 
 const FRIENDS_PANEL_WIDTH = 300;
@@ -25,6 +26,8 @@ export default function Home() {
   const selectedChatId = useChatStore((state) => state.selectedChatId);
   const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
   const { deviceInfo } = useDevice();
+  const activeMobileTab = useUiStore((state) => state.activeMobileTab);
+  const setActiveMobileTab = useUiStore((state) => state.setActiveMobileTab);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,12 +54,19 @@ export default function Home() {
 
   const handleSelectChat = (chatId: string) => {
     setSelectedChatId(chatId || null);
+    if (chatId) {
+      setActiveMobileTab('chats');
+    }
   };
+
+  // Determine visibility
+  const showFriendsPanel = !deviceInfo.isMobile || (!selectedChatId && activeMobileTab === 'friends');
+  const showChatPanel = !deviceInfo.isMobile || selectedChatId || activeMobileTab === 'chats';
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>
       {/* Left Panel: Friends */}
-      {(!deviceInfo.isMobile || !selectedChatId) && (
+      {showFriendsPanel && (
         <FriendsPanel
           user={user}
           width={deviceInfo.isMobile ? "100%" : FRIENDS_PANEL_WIDTH}
@@ -68,7 +78,7 @@ export default function Home() {
       )}
       
       {/* Right Panel: ChatList or ChatView */}
-      {(!deviceInfo.isMobile || selectedChatId) && (
+      {showChatPanel && (
         <ChatPanel
           selectedChatId={selectedChatId}
           onSelectChat={handleSelectChat}

@@ -11,6 +11,7 @@ import { UserProfile, getUserById } from "@/lib/userService";
 import { Chat } from "@/lib/chatService";
 import { subscribeToUserPresence, UserPresence } from "@/lib/presenceService";
 import { ParticipantsDrawer } from "./ParticipantsDrawer";
+import { useUiStore } from "@/store/uiStore";
 
 interface ChatHeaderProps {
   chat: Chat | null;
@@ -43,6 +44,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onSearchClick,
   onMenuClick,
 }) => {
+  const headerHeightA = useUiStore((state) => state.headerHeightA);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [otherUserPresence, setOtherUserPresence] = useState<UserPresence | null>(null);
@@ -104,18 +106,17 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     return formatLastSeen(otherUserPresence.lastChanged);
   };
 
-  const handleAvatarClick = () => {
-    // Only open drawer for group chats
-    if (isGroup) {
-      setDrawerOpen(true);
-    }
-    onAvatarClick?.();
+  const handleMoreClick = () => {
+    setDrawerOpen(true);
+    onMenuClick?.();
   };
 
   return (
     <>
       <Box
         sx={{
+          height: headerHeightA,
+          minHeight: headerHeightA,
           display: "flex",
           alignItems: "center",
           gap: 2,
@@ -132,12 +133,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         )}
         <Avatar
           src={displayPhoto}
-          onClick={handleAvatarClick}
+          onClick={onAvatarClick}
           sx={{
             width: 40,
             height: 40,
             bgcolor: isGroup ? "#00A884" : "#6B7C85",
-            cursor: isGroup ? "pointer" : "default",
           }}
         >
           {displayInitial}
@@ -156,25 +156,21 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           </Typography>
         </Box>
         
-
-        
         <IconButton onClick={onSearchClick} sx={{ color: "#AEBAC1" }}>
           <SearchIcon />
         </IconButton>
-        <IconButton onClick={onMenuClick} sx={{ color: "#AEBAC1" }}>
+        <IconButton onClick={handleMoreClick} sx={{ color: "#AEBAC1" }}>
           <MoreIcon />
         </IconButton>
       </Box>
 
-      {/* Participants Drawer - Only for group chats */}
-      {isGroup && (
-        <ParticipantsDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          chat={chat}
-          participants={participants}
-        />
-      )}
+      {/* Participants Drawer - For both group and private chats */}
+      <ParticipantsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        chat={chat}
+        participants={participants}
+      />
     </>
   );
 };

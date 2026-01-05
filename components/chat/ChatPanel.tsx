@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
-import { Box, Typography } from "@mui/material";
+import React, { useState } from "react";
+import { Box } from "@mui/material";
 import { ChatList } from "./ChatList";
 import { ChatView } from "./ChatView";
+import { ChatPanelHeader } from "./ChatPanelHeader";
 
 interface ChatPanelProps {
   selectedChatId: string | null;
@@ -14,6 +15,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   selectedChatId,
   onSelectChat,
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  
   // Show ChatView when a chat is selected, otherwise show ChatList
   const isInRoom = Boolean(selectedChatId);
 
@@ -38,29 +41,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         // In-list: Show ChatList with header
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {/* Header */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              px: 2,
-              py: 1.5,
-              bgcolor: "#202C33",
-              minHeight: 60,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1.125rem" }}
-            >
-              Chats
-            </Typography>
-          </Box>
+          <ChatPanelHeader 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            totalMatches={0}
+          />
           
           {/* Chat List */}
           <Box sx={{ flex: 1, overflow: "hidden" }}>
             <ChatList 
               onSelectChat={onSelectChat} 
-              selectedChatId={selectedChatId || undefined} 
+              selectedChatId={selectedChatId || undefined}
+              searchTerm={searchTerm}
             />
           </Box>
         </Box>

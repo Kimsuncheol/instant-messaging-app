@@ -6,6 +6,7 @@ import {
   Close as CloseIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
+import { useUiStore } from "@/store/uiStore";
 
 interface ChatSearchBarProps {
   searchTerm: string;
@@ -26,14 +27,18 @@ export const ChatSearchBar: React.FC<ChatSearchBarProps> = ({
   onPrev,
   onClose,
 }) => {
+  const headerHeightA = useUiStore((state) => state.headerHeightA);
+
   return (
     <Box
       sx={{
-        height: 60,
+        height: headerHeightA,
+        minHeight: headerHeightA,
         bgcolor: '#202C33',
         display: 'flex',
         alignItems: 'center',
         px: 2,
+        py: 1.5,
         borderBottom: '1px solid #2A3942',
         width: '100%',
       }}

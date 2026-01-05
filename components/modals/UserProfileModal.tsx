@@ -107,6 +107,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     loadProfile();
   }, [open, userId, user]);
 
+  // Check if viewing own profile
+  const isSelf = user?.uid === userId;
+
   const handleStartChat = async () => {
     if (!user) return;
     setActionLoading(true);
@@ -332,28 +335,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       "&:hover": { bgcolor: "#008f70" },
                     }}
                   >
-                    Message
+                    {isSelf ? "Message Yourself" : "Message"}
                   </Button>
                 )}
 
-                <Button
-                  variant="outlined"
-                  startIcon={blocked ? <AddIcon /> : <BlockIcon />}
-                  onClick={handleBlock}
-                  disabled={actionLoading}
-                  sx={{
-                    color: blocked ? "#00A884" : "#F15C6D",
-                    borderColor: blocked ? "#00A884" : "#F15C6D",
-                    "&:hover": {
-                      borderColor: blocked ? "#008f70" : "#d14a5a",
-                      bgcolor: "transparent",
-                    },
-                  }}
-                >
-                  {blocked ? "Unblock" : "Block"}
-                </Button>
+                {/* Block button - only show if not self */}
+                {!isSelf && (
+                  <Button
+                    variant="outlined"
+                    startIcon={blocked ? <AddIcon /> : <BlockIcon />}
+                    onClick={handleBlock}
+                    disabled={actionLoading}
+                    sx={{
+                      color: blocked ? "#00A884" : "#F15C6D",
+                      borderColor: blocked ? "#00A884" : "#F15C6D",
+                      "&:hover": {
+                        borderColor: blocked ? "#008f70" : "#d14a5a",
+                        bgcolor: "transparent",
+                      },
+                    }}
+                  >
+                    {blocked ? "Unblock" : "Block"}
+                  </Button>
+                )}
 
-                {isFriend && (
+                {/* Remove button - only show if friend and not self */}
+                {isFriend && !isSelf && (
                   <Button
                     variant="outlined"
                     startIcon={<RemoveIcon />}

@@ -96,7 +96,11 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       {/* Tab Content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {activeTab === 0 && (
-          <ChatList onSelectChat={onSelectChat} selectedChatId={selectedChatId} />
+          <ChatList 
+            onSelectChat={onSelectChat}
+            selectedChatId={selectedChatId}
+            searchTerm=""
+          />
         )}
         {activeTab === 1 && (
           <FriendsList onSelectChat={onSelectChat} onSwitchToChats={() => setActiveTab(0)} />

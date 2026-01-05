@@ -754,3 +754,107 @@ export const sendCallMessage = async (
     lastMessageAt: serverTimestamp(),
   });
 };
+
+// Leave a group chat with validation and system message
+export const leaveGroupChat = async (chatId: string, userId: string): Promise<void> => {
+  const chatRef = doc(db, "chats", chatId);
+  const chatDoc = await getDoc(chatRef);
+  
+  if (!chatDoc.exists()) {
+    throw new Error("Chat not found");
+  }
+  
+  const chatData = chatDoc.data();
+  
+  // Only allow leaving group chats
+  if (chatData.type !== "group") {
+    throw new Error("Cannot leave a private chat");
+  }
+  
+  // Don't allow creator to leave if they're the only admin
+  const admins = chatData.groupAdminIds || [];
+  if (chatData.groupCreatorId === userId && admins.length === 1 && admins[0] === userId) {
+    throw new Error("Creator must assign another admin before leaving");
+  }
+  
+  const batch = writeBatch(db);
+  
+  // Remove user from participants
+  const updatedParticipants = chatData.participants.filter((p: string) => p !== userId);
+  
+  // Remove user from admins if they are one
+  const updatedAdmins = admins.filter((a: string) => a !== userId);
+  
+  batch.update(chatRef, {
+    participants: updatedParticipants,
+    groupAdminIds: updatedAdmins,
+  });
+  
+  // Add system message about user leaving
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  batch.set(doc(messagesRef), {
+    text: "left the group",
+    senderId: userId,
+    createdAt: serverTimestamp(),
+    readBy: [userId],
+    type: "system",
+  });
+  
+  await batch.commit();
+};
+
+// Add participants to a group chat
+export const addParticipantsToGroup = async (
+  chatId: string,
+  userIds: string[],
+  addedByUserId: string
+): Promise<void> => {
+  if (userIds.length === 0) {
+    throw new Error("No users selected");
+  }
+
+  const chatRef = doc(db, "chats", chatId);
+  const chatDoc = await getDoc(chatRef);
+
+  if (!chatDoc.exists()) {
+    throw new Error("Chat not found");
+  }
+
+  const chatData = chatDoc.data();
+
+  // Only allow for group chats
+  if (chatData.type !== "group") {
+    throw new Error("Can only add participants to group chats");
+  }
+
+  // Filter out users who are already participants
+  const currentParticipants = chatData.participants || [];
+  const newParticipants = userIds.filter(
+    (userId) => !currentParticipants.includes(userId)
+  );
+
+  if (newParticipants.length === 0) {
+    throw new Error("All selected users are already participants");
+  }
+
+  const batch = writeBatch(db);
+
+  // Add new participants to the group
+  batch.update(chatRef, {
+    participants: [...currentParticipants, ...newParticipants],
+  });
+
+  // Add system message for each added participant
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  newParticipants.forEach((userId) => {
+    batch.set(doc(messagesRef), {
+      text: "was added to the group",
+      senderId: userId,
+      createdAt: serverTimestamp(),
+      readBy: [addedByUserId],
+      type: "system",
+    });
+  });
+
+  await batch.commit();
+};

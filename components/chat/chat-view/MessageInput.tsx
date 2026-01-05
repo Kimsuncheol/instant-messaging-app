@@ -12,6 +12,7 @@ import { AiImageModal } from "@/components/modals/AiImageModal";
 import { TranslateModal } from "@/components/modals/TranslateModal";
 import { AttachmentPanel, AttachmentTriggerButton, AttachmentType } from "@/components/chat/chat-input";
 import { Poll } from "@/lib/chatService";
+import { useUiStore } from "@/store/uiStore";
 
 interface MessageInputProps {
   onSend: (text: string, poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">) => Promise<void>;
@@ -42,6 +43,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onContactClick,
   onMemoClick,
 }) => {
+  const footerHeightB = useUiStore((state) => state.footerHeightB);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
@@ -159,15 +161,18 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     e.target.value = "";
   };
 
+  const paddingY = 1.5;
+
   return (
     <Box
       sx={{
+        minHeight: footerHeightB,
         position: "relative",
         display: "flex",
         alignItems: "center",
         gap: 1,
         px: 2,
-        py: 1,
+        py: paddingY,
         bgcolor: "#202C33",
       }}
     >
@@ -246,6 +251,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         maxRows={4}
         sx={{
           "& .MuiOutlinedInput-root": {
+            height: footerHeightB - paddingY * 16,
             bgcolor: "#2A3942",
             borderRadius: "8px",
             "& fieldset": { border: "none" },
@@ -291,7 +297,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       <AiImageModal
         open={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
-        onImageGenerated={(imageUrl) => {
+        onImageGenerated={() => {
           setMessage((prev) => prev + (prev ? " " : "") + `🎨 [AI Generated Image]`);
         }}
       />
