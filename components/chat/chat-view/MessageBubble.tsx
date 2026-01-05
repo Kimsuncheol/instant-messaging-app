@@ -202,7 +202,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       <Box sx={{ display: "flex", justifyContent: isOwn ? "flex-end" : "flex-start", mb: 0.5 }}>
         <Typography
           sx={{
-            color: "rgba(255,255,255,0.4)",
+            color: "rgba(255,255,255,0.2)",
             fontSize: "0.875rem",
             fontStyle: "italic",
             px: 1.5,
