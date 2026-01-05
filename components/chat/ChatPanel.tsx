@@ -5,6 +5,8 @@ import { Box } from "@mui/material";
 import { ChatList } from "./ChatList";
 import { ChatView } from "./ChatView";
 import { ChatPanelHeader } from "./ChatPanelHeader";
+import { SidebarUserInfo } from "@/components/dashboard/SidebarUserInfo";
+import { useAuth } from "@/context/AuthContext";
 
 interface ChatPanelProps {
   selectedChatId: string | null;
@@ -16,7 +18,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onSelectChat,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const { user } = useAuth();
+
   // Show ChatView when a chat is selected, otherwise show ChatList
   const isInRoom = Boolean(selectedChatId);
 
@@ -33,28 +36,32 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     >
       {isInRoom ? (
         // In-room: Show ChatView
-        <ChatView 
-          chatId={selectedChatId!} 
-          onBack={() => onSelectChat("")}
-        />
+        <ChatView chatId={selectedChatId!} onBack={() => onSelectChat("")} />
       ) : (
         // In-list: Show ChatList with header
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {/* Header */}
-          <ChatPanelHeader 
+          <ChatPanelHeader
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             totalMatches={0}
           />
-          
+
           {/* Chat List */}
           <Box sx={{ flex: 1, overflow: "hidden" }}>
-            <ChatList 
-              onSelectChat={onSelectChat} 
+            <ChatList
+              onSelectChat={onSelectChat}
               selectedChatId={selectedChatId || undefined}
               searchTerm={searchTerm}
             />
           </Box>
+
+          {/* User Info Footer - Mobile Only */}
+          {user && (
+            <Box sx={{ display: { xs: "block", md: "none" } }}>
+              <SidebarUserInfo user={user} />
+            </Box>
+          )}
         </Box>
       )}
     </Box>
