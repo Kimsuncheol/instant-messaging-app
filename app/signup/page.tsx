@@ -16,14 +16,22 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Language as LanguageIcon } from "@mui/icons-material";
+import {
+  Visibility,
+  VisibilityOff,
+  Language as LanguageIcon,
+  Clear as ClearIcon,
+} from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+} from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useLocale } from "@/context/LocaleContext";
-import { useTranslations } from "next-intl";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -37,8 +45,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { locale, setLocale } = useLocale();
-  const t = useTranslations();
-  
+
   // Auto-detected country and dial code
   const [detectedCountry, setDetectedCountry] = useState("");
   const [countryCode, setCountryCode] = useState("");
@@ -48,14 +55,24 @@ export default function SignUpPage() {
 
   // Map country codes to supported locales
   const countryToLocale: Record<string, string> = {
-    US: "en", GB: "en", AU: "en", CA: "en",
+    US: "en",
+    GB: "en",
+    AU: "en",
+    CA: "en",
     KR: "ko",
-    ES: "es", MX: "es", AR: "es",
-    FR: "fr", BE: "fr",
-    CN: "zh", TW: "zh", HK: "zh",
+    ES: "es",
+    MX: "es",
+    AR: "es",
+    FR: "fr",
+    BE: "fr",
+    CN: "zh",
+    TW: "zh",
+    HK: "zh",
     JP: "ja",
     IN: "hi",
-    DE: "de", AT: "de", CH: "de",
+    DE: "de",
+    AT: "de",
+    CH: "de",
     IT: "it",
     RU: "ru",
   };
@@ -71,7 +88,7 @@ export default function SignUpPage() {
         setCountryCode(data.countryCode);
         setDialCode(data.dialCode);
         setPhoneNumber(data.dialCode + " ");
-        
+
         // Auto-select language based on country
         const suggestedLocale = countryToLocale[data.countryCode];
         if (suggestedLocale && suggestedLocale !== locale) {
@@ -215,9 +232,7 @@ export default function SignUpPage() {
             value={locale}
             onChange={(e) => setLocale(e.target.value as any)}
             label="Language"
-            startAdornment={
-              <LanguageIcon sx={{ color: "#8696A0", mr: 1 }} />
-            }
+            startAdornment={<LanguageIcon sx={{ color: "#8696A0", mr: 1 }} />}
             sx={{
               bgcolor: "#2A3942",
               color: "#E9EDEF",
@@ -269,6 +284,20 @@ export default function SignUpPage() {
             margin="normal"
             required
             autoFocus
+            InputProps={{
+              endAdornment: displayName && (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setDisplayName("")}
+                    edge="end"
+                    size="small"
+                    sx={{ color: "#8696A0" }}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "#2A3942",
@@ -286,13 +315,15 @@ export default function SignUpPage() {
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             margin="normal"
-            placeholder={dialCode ? `${dialCode} 234 567 8900` : "+1 234 567 8900"}
+            placeholder={
+              dialCode ? `${dialCode} 234 567 8900` : "+1 234 567 8900"
+            }
             helperText={
-              countryLoading 
-                ? "Detecting location..." 
-                : detectedCountry 
-                  ? `🌍 ${detectedCountry} (${countryCode}) • ${dialCode}` 
-                  : ""
+              countryLoading
+                ? "Detecting location..."
+                : detectedCountry
+                ? `🌍 ${detectedCountry} (${countryCode}) • ${dialCode}`
+                : ""
             }
             FormHelperTextProps={{ sx: { color: "#00A884", fontWeight: 500 } }}
             InputProps={{
@@ -316,6 +347,18 @@ export default function SignUpPage() {
                   </Box>
                 </InputAdornment>
               ),
+              endAdornment: phoneNumber && (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setPhoneNumber("")}
+                    edge="end"
+                    size="small"
+                    sx={{ color: "#8696A0" }}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -335,6 +378,20 @@ export default function SignUpPage() {
             onChange={(e) => setEmail(e.target.value)}
             margin="normal"
             required
+            InputProps={{
+              endAdornment: email && (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setEmail("")}
+                    edge="end"
+                    size="small"
+                    sx={{ color: "#8696A0" }}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "#2A3942",
@@ -356,6 +413,15 @@ export default function SignUpPage() {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
+                  {password && (
+                    <IconButton
+                      onClick={() => setPassword("")}
+                      size="small"
+                      sx={{ color: "#8696A0", mr: 1 }}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  )}
                   <IconButton
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
@@ -406,7 +472,8 @@ export default function SignUpPage() {
                 transition: "color 0.2s",
               }}
             >
-              {/[^A-Za-z0-9]/.test(password) ? "✓" : "•"} At least one special character
+              {/[^A-Za-z0-9]/.test(password) ? "✓" : "•"} At least one special
+              character
             </Typography>
           </Box>
 
@@ -424,10 +491,19 @@ export default function SignUpPage() {
                 ? "Passwords do not match"
                 : ""
             }
-             FormHelperTextProps={{ sx: { color: "#F15C6D" } }}
+            FormHelperTextProps={{ sx: { color: "#F15C6D" } }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
+                  {confirmPassword && (
+                    <IconButton
+                      onClick={() => setConfirmPassword("")}
+                      size="small"
+                      sx={{ color: "#8696A0", mr: 1 }}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  )}
                   <IconButton
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     edge="end"

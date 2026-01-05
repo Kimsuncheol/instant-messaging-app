@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { List, Box, Typography } from "@mui/material";
 import { UserProfile } from "@/lib/userService";
-import { subscribeToMultiplePresences, UserPresence } from "@/lib/presenceService";
+import {
+  subscribeToMultiplePresences,
+  UserPresence,
+} from "@/lib/presenceService";
 import { ParticipantItem } from "./ParticipantItem";
 
 interface ParticipantsListProps {
@@ -34,7 +37,6 @@ export const ParticipantsList: React.FC<ParticipantsListProps> = ({
   onParticipantClick,
 }) => {
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
-  const participantCount = participants.length;
 
   // Subscribe to presence for all participants
   useEffect(() => {
@@ -68,21 +70,6 @@ export const ParticipantsList: React.FC<ParticipantsListProps> = ({
 
   return (
     <>
-      {/* Participants Section Header */}
-      <Box sx={{ px: 2, py: 2 }}>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            color: "#00A884",
-            fontWeight: 500,
-            mb: 1,
-            fontSize: "0.875rem",
-          }}
-        >
-          {participantCount} {participantCount === 1 ? "PARTICIPANT" : "PARTICIPANTS"}
-        </Typography>
-      </Box>
-
       {/* Participants List */}
       {participants.length > 0 ? (
         <List sx={{ px: 1, py: 0 }}>

@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Box, Typography, Tooltip } from "@mui/material";
-import { 
-  Done as SingleCheckIcon, 
-  DoneAll as DoubleCheckIcon, 
+import {
+  Done as SingleCheckIcon,
+  DoneAll as DoubleCheckIcon,
   Reply as ForwardedIcon,
   Call as CallIcon,
   Videocam as VideoIcon,
@@ -26,14 +26,17 @@ interface MessageBubbleProps {
   onLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onClick?: (message: Message) => void;
   onPollVote?: (messageId: string, optionId: string) => void;
-  onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
+  onEventRSVP?: (
+    messageId: string,
+    status: "going" | "maybe" | "declined"
+  ) => void;
   currentUserId?: string;
   searchTerm?: string;
   isCurrentMatch?: boolean;
 }
 
 // Read status types for clarity
-type ReadStatusType = 'sending' | 'sent' | 'delivered' | 'read';
+type ReadStatusType = "sending" | "sent" | "delivered" | "read";
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -55,59 +58,77 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   // Determine read status for own messages with enhanced logic
-  const getReadStatus = (): { icon: React.ReactNode; tooltip: string } | null => {
+  const getReadStatus = (): {
+    icon: React.ReactNode;
+    tooltip: string;
+  } | null => {
     if (!isOwn) return null;
-    
+
     const readCount = message.readBy?.length || 0;
     const otherParticipants = totalParticipants - 1; // Exclude sender
     const isReadByAll = readCount >= totalParticipants;
     const isReadBySome = readCount > 1 && readCount < totalParticipants;
-    
+
     // Determine status type
     let status: ReadStatusType;
     if (!message.createdAt) {
-      status = 'sending';
+      status = "sending";
     } else if (isReadByAll) {
-      status = 'read';
+      status = "read";
     } else if (isReadBySome || readCount > 1) {
-      status = 'delivered';
+      status = "delivered";
     } else {
-      status = 'sent';
+      status = "sent";
     }
 
     // Return appropriate icon and tooltip
     switch (status) {
-      case 'sending':
+      case "sending":
         return {
           icon: (
-            <PendingIcon 
-              sx={{ 
-                fontSize: "0.875rem", 
+            <PendingIcon
+              sx={{
+                fontSize: "0.875rem",
                 color: "rgba(255,255,255,0.4)",
                 animation: "pulse 1.5s infinite",
                 "@keyframes pulse": {
                   "0%, 100%": { opacity: 0.4 },
                   "50%": { opacity: 0.8 },
                 },
-              }} 
+              }}
             />
           ),
           tooltip: "Sending...",
         };
-      case 'sent':
+      case "sent":
         return {
-          icon: <SingleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />,
+          icon: (
+            <SingleCheckIcon
+              sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }}
+            />
+          ),
           tooltip: "Sent",
         };
-      case 'delivered':
+      case "delivered":
         return {
-          icon: <DoubleCheckIcon sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }} />,
-          tooltip: `Delivered${otherParticipants > 1 ? ` to ${readCount - 1}/${otherParticipants}` : ""}`,
+          icon: (
+            <DoubleCheckIcon
+              sx={{ fontSize: "1rem", color: "rgba(255,255,255,0.5)" }}
+            />
+          ),
+          tooltip: `Delivered${
+            otherParticipants > 1
+              ? ` to ${readCount - 1}/${otherParticipants}`
+              : ""
+          }`,
         };
-      case 'read':
+      case "read":
         return {
           icon: <DoubleCheckIcon sx={{ fontSize: "1rem", color: "#53BDEB" }} />,
-          tooltip: otherParticipants > 1 ? `Read by all ${otherParticipants} members` : "Read",
+          tooltip:
+            otherParticipants > 1
+              ? `Read by all ${otherParticipants} members`
+              : "Read",
         };
       default:
         return null;
@@ -116,8 +137,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Get reactions display
   const getReactionsDisplay = () => {
-    if (!message.reactions || Object.keys(message.reactions).length === 0) return null;
-    
+    if (!message.reactions || Object.keys(message.reactions).length === 0)
+      return null;
+
     return (
       <Box
         sx={{
@@ -143,7 +165,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           >
             <span>{emoji}</span>
             {users.length > 1 && (
-              <span style={{ color: "rgba(255,255,255,0.7)" }}>{users.length}</span>
+              <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                {users.length}
+              </span>
             )}
           </Box>
         ))}
@@ -155,24 +179,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const renderText = (text: string) => {
     if (!searchTerm.trim()) return text;
 
-    const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
-    return parts.map((part, index) => 
+    const parts = text.split(new RegExp(`(${searchTerm})`, "gi"));
+    return parts.map((part, index) =>
       part.toLowerCase() === searchTerm.toLowerCase() ? (
-        <span 
-          key={index} 
-          style={{ 
-            backgroundColor: isCurrentMatch ? '#FFD700' : '#FFFF00', // Gold for current, Yellow for others
-            color: '#000',
-            borderRadius: '2px',
-            padding: '0 2px',
-            fontWeight: isCurrentMatch ? 'bold' : 'normal'
+        <span
+          key={index}
+          style={{
+            backgroundColor: isCurrentMatch ? "#FFD700" : "#FFFF00", // Gold for current, Yellow for others
+            color: "#000",
+            borderRadius: "2px",
+            padding: "0 2px",
+            fontWeight: isCurrentMatch ? "bold" : "normal",
           }}
         >
           {part}
         </span>
       ) : (
         part
-      )  
+      )
     );
   };
 
@@ -181,13 +205,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     const { type: callType, status } = message.callData;
     const isMissedOrDeclined = status === "missed" || status === "declined";
     const iconColor = isMissedOrDeclined ? "#F15C6D" : "#00A884";
-    
-    const CallIconComponent = isMissedOrDeclined 
-      ? MissedCallIcon 
-      : callType === "video" 
-        ? VideoIcon 
-        : CallIcon;
-    
+
+    const CallIconComponent = isMissedOrDeclined
+      ? MissedCallIcon
+      : callType === "video"
+      ? VideoIcon
+      : CallIcon;
+
     return (
       <Box
         sx={{
@@ -217,7 +241,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           >
             {message.text.replace("📞 ", "")}
           </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>
+          <Typography
+            sx={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}
+          >
             {formatTime(message.createdAt)}
           </Typography>
         </Box>
@@ -228,7 +254,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   // Handle deleted messages
   if (message.deleted) {
     return (
-      <Box sx={{ display: "flex", justifyContent: isOwn ? "flex-end" : "flex-start", mb: 0.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwn ? "flex-end" : "flex-start",
+          mb: 0.5,
+        }}
+      >
         <Typography
           sx={{
             color: "rgba(255,255,255,0.2)",
@@ -376,7 +408,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         }}
       >
         <Box>
-          <MemoMessage memo={message.memo} messageId={message.id} isOwn={isOwn} />
+          <MemoMessage
+            memo={message.memo}
+            messageId={message.id}
+            isOwn={isOwn}
+          />
           <Typography
             sx={{
               color: "rgba(255,255,255,0.6)",
@@ -414,20 +450,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           position: "relative",
           cursor: onLongPress || onClick ? "pointer" : "default",
           "&:hover": onLongPress || onClick ? { opacity: 0.9 } : {},
-          border: isCurrentMatch ? '2px solid #00A884' : 'none', // Extra visual cue for current match
-          transition: 'all 0.3s ease',
+          border: isCurrentMatch ? "2px solid #00A884" : "none", // Extra visual cue for current match
+          transition: "all 0.3s ease",
         }}
       >
         {/* Forwarded indicator */}
         {message.forwardedFrom && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-            <ForwardedIcon sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }} />
-            <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", fontStyle: "italic" }}>
+          <Box
+            sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}
+          >
+            <ForwardedIcon
+              sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}
+            />
+            <Typography
+              sx={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: "0.75rem",
+                fontStyle: "italic",
+              }}
+            >
               Forwarded
             </Typography>
           </Box>
         )}
-        
+
         <Typography
           sx={{
             color: "#E9EDEF",
@@ -438,18 +484,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         >
           {renderText(message.text)}
         </Typography>
-        
+
         {/* Reactions */}
         {getReactionsDisplay()}
-        
+
         {/* Time, edited, and read status */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 0.5, mt: 0.25 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 0.5,
+            mt: 0.25,
+          }}
+        >
           {message.editedAt && (
-            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.6875rem" }}>
+            <Typography
+              sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.6875rem" }}
+            >
               edited
             </Typography>
           )}
-          <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.6875rem" }}>
+          <Typography
+            sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.6875rem" }}
+          >
             {formatTime(message.createdAt)}
           </Typography>
           {(() => {
@@ -457,7 +515,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             if (!status) return null;
             return (
               <Tooltip title={status.tooltip} arrow placement="top">
-                <Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+                <Box
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center" }}
+                >
                   {status.icon}
                 </Box>
               </Tooltip>

@@ -47,7 +47,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   const headerHeightA = useUiStore((state) => state.headerHeightA);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [participants, setParticipants] = useState<UserProfile[]>([]);
-  const [otherUserPresence, setOtherUserPresence] = useState<UserPresence | null>(null);
+  const [otherUserPresence, setOtherUserPresence] =
+    useState<UserPresence | null>(null);
 
   const isGroup = chat?.type === "group";
   const displayName = isGroup
@@ -62,47 +63,66 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   useEffect(() => {
     if (isGroup || !otherUser?.uid) return;
 
-    const unsubscribe = subscribeToUserPresence(otherUser.uid, setOtherUserPresence);
+    const unsubscribe = subscribeToUserPresence(
+      otherUser.uid,
+      setOtherUserPresence
+    );
     return () => unsubscribe();
   }, [isGroup, otherUser?.uid]);
+
+  // Track previous participants to avoid unnecessary re-fetches
+  const prevParticipantIdsRef = React.useRef<string>("");
 
   // Fetch participants when drawer opens
   useEffect(() => {
     const fetchParticipants = async () => {
       if (!drawerOpen || !chat) return;
 
+      // Create a stable string representation of participant IDs
+      const currentParticipantIdsStr = [...chat.participants].sort().join(",");
+
+      // If IDs haven't changed since last fetch, skip
+      if (
+        prevParticipantIdsRef.current === currentParticipantIdsStr &&
+        participants.length > 0
+      ) {
+        return;
+      }
+
       try {
         const participantProfiles = await Promise.all(
           chat.participants.map((participantId) => getUserById(participantId))
         );
-        
+
         // Filter out null values
         const validParticipants = participantProfiles.filter(
           (p): p is UserProfile => p !== null
         );
-        
+
         setParticipants(validParticipants);
+        prevParticipantIdsRef.current = currentParticipantIdsStr;
       } catch (error) {
         console.error("Error fetching participants:", error);
         setParticipants([]);
+        prevParticipantIdsRef.current = "";
       }
     };
 
     fetchParticipants();
-  }, [drawerOpen, chat]);
+  }, [drawerOpen, chat, participants.length]);
 
   // Get status text to display
   const getStatusText = (): string => {
     if (isGroup) {
       return `${chat?.participants.length || 0} members`;
     }
-    
+
     if (!otherUserPresence) return "offline";
-    
+
     if (otherUserPresence.state === "online") {
       return "online";
     }
-    
+
     return formatLastSeen(otherUserPresence.lastChanged);
   };
 
@@ -143,19 +163,22 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           {displayInitial}
         </Avatar>
         <Box sx={{ flexGrow: 1 }}>
-          <Typography sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1rem" }}>
+          <Typography
+            sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1rem" }}
+          >
             {displayName}
           </Typography>
-          <Typography 
-            sx={{ 
-              color: otherUserPresence?.state === "online" ? "#00A884" : "#8696A0", 
-              fontSize: "0.75rem" 
+          <Typography
+            sx={{
+              color:
+                otherUserPresence?.state === "online" ? "#00A884" : "#8696A0",
+              fontSize: "0.75rem",
             }}
           >
             {getStatusText()}
           </Typography>
         </Box>
-        
+
         <IconButton onClick={onSearchClick} sx={{ color: "#AEBAC1" }}>
           <SearchIcon />
         </IconButton>

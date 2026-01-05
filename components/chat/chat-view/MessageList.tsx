@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { Box, Chip } from "@mui/material";
 import { Message } from "@/lib/chatService";
 import { MessageBubble } from "./MessageBubble";
+import { SystemIndicator } from "./SystemIndicator";
 import { Timestamp } from "firebase/firestore";
 
 interface MessageListProps {
@@ -12,7 +13,10 @@ interface MessageListProps {
   onMessageLongPress?: (message: Message, e?: React.MouseEvent) => void;
   onMessageClick?: (message: Message) => void;
   onPollVote?: (messageId: string, optionId: string) => void;
-  onEventRSVP?: (messageId: string, status: 'going' | 'maybe' | 'declined') => void;
+  onEventRSVP?: (
+    messageId: string,
+    status: "going" | "maybe" | "declined"
+  ) => void;
   onSaveToMemo?: (content: string) => void;
   searchTerm?: string;
   currentMatchId?: string | null;
@@ -27,13 +31,13 @@ const getDateKey = (timestamp: Timestamp | null): string => {
 
 const DateSeparator: React.FC<{ dateKey: string }> = ({ dateKey }) => {
   const date = new Date(dateKey);
-  
+
   const now = new Date();
   const isToday = dateKey === now.toDateString();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const isYesterday = dateKey === yesterday.toDateString();
-  
+
   let label: string;
   if (isToday) {
     label = "Today";
@@ -41,13 +45,13 @@ const DateSeparator: React.FC<{ dateKey: string }> = ({ dateKey }) => {
     label = "Yesterday";
   } else {
     // Format date nicely
-    label = date.toLocaleDateString(undefined, { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
+    label = date.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     });
   }
-  
+
   return (
     <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
       <Chip
@@ -81,17 +85,18 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   // Group messages by date
   const messagesWithSeparators = useMemo(() => {
-    const result: { type: "separator" | "message"; data: string | Message }[] = [];
+    const result: { type: "separator" | "message"; data: string | Message }[] =
+      [];
     let lastDateKey = "";
 
     messages.forEach((msg) => {
       const dateKey = getDateKey(msg.createdAt);
-      
+
       if (dateKey !== lastDateKey) {
         result.push({ type: "separator", data: dateKey });
         lastDateKey = dateKey;
       }
-      
+
       result.push({ type: "message", data: msg });
     });
 
@@ -127,29 +132,33 @@ export const MessageList: React.FC<MessageListProps> = ({
       {messagesWithSeparators.map((item) => {
         if (item.type === "separator") {
           return (
-            <DateSeparator 
-              key={`sep-${item.data}`} 
+            <DateSeparator
+              key={`sep-${item.data}`}
               dateKey={item.data as string}
             />
           );
         }
-        
+
         const msg = item.data as Message;
         const isMatch = msg.id === currentMatchId;
 
         return (
           <Box key={msg.id} ref={isMatch ? matchRef : null}>
-            <MessageBubble
-              message={msg}
-              isOwn={msg.senderId === currentUserId}
-              onLongPress={onMessageLongPress}
-              onClick={onMessageClick}
-              onPollVote={onPollVote}
-              onEventRSVP={onEventRSVP}
-              currentUserId={currentUserId}
-              searchTerm={searchTerm}
-              isCurrentMatch={isMatch}
-            />
+            {msg.type === "system" ? (
+              <SystemIndicator text={msg.text} />
+            ) : (
+              <MessageBubble
+                message={msg}
+                isOwn={msg.senderId === currentUserId}
+                onLongPress={onMessageLongPress}
+                onClick={onMessageClick}
+                onPollVote={onPollVote}
+                onEventRSVP={onEventRSVP}
+                currentUserId={currentUserId}
+                searchTerm={searchTerm}
+                isCurrentMatch={isMatch}
+              />
+            )}
           </Box>
         );
       })}

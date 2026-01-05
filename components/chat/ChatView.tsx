@@ -2,11 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import { sendMessage, subscribeToMessages, getChatById, Chat, markMessagesAsRead, Message, Poll, voteOnPoll, rsvpToEvent } from "@/lib/chatService";
+import {
+  sendMessage,
+  subscribeToMessages,
+  subscribeToChat,
+  Chat,
+  markMessagesAsRead,
+  Message,
+  Poll,
+  voteOnPoll,
+  rsvpToEvent,
+} from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
 import { useCall } from "@/context/CallContext";
 import { getUserById, UserProfile } from "@/lib/userService";
-import { handleTyping, subscribeToTyping, clearTyping } from "@/lib/typingService";
+import {
+  handleTyping,
+  subscribeToTyping,
+  clearTyping,
+} from "@/lib/typingService";
 import { ChatHeader } from "./chat-view/ChatHeader";
 import { MessageList } from "./chat-view/MessageList";
 import { MessageInput } from "./chat-view/MessageInput";
@@ -38,15 +52,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
-  
+
   // Message context menu state
-  const [contextMenuAnchor, setContextMenuAnchor] = useState<{ top: number; left: number } | null>(null);
-  const [contextMenuMessage, setContextMenuMessage] = useState<Message | null>(null);
-  
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [contextMenuMessage, setContextMenuMessage] = useState<Message | null>(
+    null
+  );
+
   // Forward modal state
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
-  const [forwardMessage, setForwardMessageState] = useState<Message | null>(null);
-  
+  const [forwardMessage, setForwardMessageState] = useState<Message | null>(
+    null
+  );
+
   // Poll modal state
   const [pollModalOpen, setPollModalOpen] = useState(false);
   // Event modal state
@@ -60,23 +81,24 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   // Memo modal state
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   // Save to memo state
-  const [saveToMemoContent, setSaveToMemoContent] = useState<string | null>(null);
+  const [saveToMemoContent, setSaveToMemoContent] = useState<string | null>(
+    null
+  );
 
-  const { 
-    searchTerm, 
-    handleSearch, 
-    matches, 
-    currentMatchIndex, 
-    navigate, 
+  const {
+    searchTerm,
+    handleSearch,
+    matches,
+    currentMatchIndex,
+    navigate,
     clearSearch,
-    currentMatchId 
+    currentMatchId,
   } = useChatSearch(messages);
   const [showSearch, setShowSearch] = useState(false);
 
-  // Load chat and other user info
+  // Subscribe to chat and load other user info
   useEffect(() => {
-    const loadChat = async () => {
-      const chatData = await getChatById(chatId);
+    const unsubscribe = subscribeToChat(chatId, async (chatData) => {
       setChat(chatData);
 
       if (chatData && user && chatData.type === "private") {
@@ -86,26 +108,39 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
           setOtherUser(userData);
         }
       }
-    };
-    loadChat();
+    });
+
+    return () => unsubscribe();
   }, [chatId, user]);
 
   // Subscribe to messages
+  const joinedAt = chat?.participantJoinedAt?.[user?.uid || ""];
+  const joinedAtMillis = joinedAt?.toMillis();
+
   useEffect(() => {
-    const unsubscribe = subscribeToMessages(chatId, (msgs) => {
-      setMessages(msgs);
-    });
+    // Wait for chat data to be loaded to determine join time (for filtering)
+    if (!chat || !user) return;
+
+    const unsubscribe = subscribeToMessages(
+      chatId,
+      (msgs) => {
+        setMessages(msgs);
+      },
+      joinedAt
+    );
+
     return () => unsubscribe();
-  }, [chatId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, user?.uid, joinedAtMillis]);
 
   // Subscribe to typing indicator
   useEffect(() => {
     if (!user) return;
-    
+
     const unsubscribe = subscribeToTyping(chatId, user.uid, (typing) => {
       setTypingUsers(typing);
     });
-    
+
     // Clear typing on unmount
     return () => {
       unsubscribe();
@@ -130,8 +165,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
 
   // Unified sendMessage handler supporting text, poll, event, file, and location
   const handleSendMessage = async (
-    text: string, 
-    poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">, 
+    text: string,
+    poll?: Omit<Poll, "id" | "totalVotes" | "createdAt">,
     event?: Omit<Event, "id" | "createdAt">,
     file?: File,
     location?: LocationData,
@@ -139,51 +174,79 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     memo?: MemoData
   ) => {
     if (!user) return;
-    
+
     // Handle file upload if present
     if (file) {
-       try {
-         await sendMessage(chatId, user.uid, text, poll, event, file);
-       } catch (err) {
-         console.error("Error sending captured image:", err);
-       }
-       return;
-    }
-    
-    // Handle location if present
-    if (location) {
-      await sendMessage(chatId, user.uid, text, poll, event, undefined, location);
+      try {
+        await sendMessage(chatId, user.uid, text, poll, event, file);
+      } catch (err) {
+        console.error("Error sending captured image:", err);
+      }
       return;
     }
-    
+
+    // Handle location if present
+    if (location) {
+      await sendMessage(
+        chatId,
+        user.uid,
+        text,
+        poll,
+        event,
+        undefined,
+        location
+      );
+      return;
+    }
+
     // Handle contact if present
     if (contact) {
-      await sendMessage(chatId, user.uid, text, poll, event, undefined, undefined, contact);
+      await sendMessage(
+        chatId,
+        user.uid,
+        text,
+        poll,
+        event,
+        undefined,
+        undefined,
+        contact
+      );
       return;
     }
 
     // Handle memo if present
     if (memo) {
-      await sendMessage(chatId, user.uid, text, poll, event, undefined, undefined, undefined, memo);
+      await sendMessage(
+        chatId,
+        user.uid,
+        text,
+        poll,
+        event,
+        undefined,
+        undefined,
+        undefined,
+        memo
+      );
       return;
     }
-    
+
     // Handle standard message
     await sendMessage(chatId, user.uid, text, poll, event);
   };
 
-
-
   const handlePollVote = async (messageId: string, optionId: string) => {
     if (!user) return;
     try {
-      await voteOnPoll(chatId, messageId, optionId, user.uid, false); 
+      await voteOnPoll(chatId, messageId, optionId, user.uid, false);
     } catch (error) {
       console.error("Error voting on poll:", error);
     }
   };
 
-  const handleEventRSVP = async (messageId: string, status: 'going' | 'maybe' | 'declined') => {
+  const handleEventRSVP = async (
+    messageId: string,
+    status: "going" | "maybe" | "declined"
+  ) => {
     if (!user) return;
     try {
       await rsvpToEvent(chatId, messageId, user.uid, status);
@@ -205,7 +268,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   };
 
   const handleMemoSend = (memo: MemoData, forwardToSelf?: boolean) => {
-    handleSendMessage("", undefined, undefined, undefined, undefined, undefined, memo);
+    handleSendMessage(
+      "",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      memo
+    );
     // TODO: If forwardToSelf is true, also send to self-chat
     if (forwardToSelf) {
       console.log("Forward to self-chat:", memo);
@@ -228,8 +299,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     }
   };
 
-  const handleMessageLongPress = (message: Message, event?: React.MouseEvent) => {
-    const position = event 
+  const handleMessageLongPress = (
+    message: Message,
+    event?: React.MouseEvent
+  ) => {
+    const position = event
       ? { top: event.clientY, left: event.clientX }
       : { top: 200, left: 100 };
     setContextMenuAnchor(position);
@@ -256,7 +330,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     if (chat?.type === "private" && user && otherUser) {
       const otherUserId = chat.participants.find((p) => p !== user.uid);
       if (otherUserId) {
-        startCall(chatId, otherUserId, otherUser.displayName || "User", "voice");
+        startCall(
+          chatId,
+          otherUserId,
+          otherUser.displayName || "User",
+          "voice"
+        );
       }
     }
   };
@@ -265,7 +344,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     if (chat?.type === "private" && user && otherUser) {
       const otherUserId = chat.participants.find((p) => p !== user.uid);
       if (otherUserId) {
-        startCall(chatId, otherUserId, otherUser.displayName || "User", "video");
+        startCall(
+          chatId,
+          otherUserId,
+          otherUser.displayName || "User",
+          "video"
+        );
       }
     }
   };
@@ -289,13 +373,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
       />
 
       {showSearch && (
-        <ChatSearchBar 
+        <ChatSearchBar
           searchTerm={searchTerm}
           onSearch={handleSearch}
           currentMatchIndex={currentMatchIndex}
           totalMatches={matches.length}
-          onNext={() => navigate('next')}
-          onPrev={() => navigate('prev')}
+          onNext={() => navigate("next")}
+          onPrev={() => navigate("prev")}
           onClose={() => {
             setShowSearch(false);
             clearSearch();
@@ -369,7 +453,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
           messageText={forwardMessage.text}
         />
       )}
-      
+
       {/* Poll Creation Modal */}
       <PollCreationModal
         open={pollModalOpen}

@@ -16,6 +16,7 @@ import {
   arrayUnion
 } from "firebase/firestore";
 import { uploadMedia } from "./mediaService";
+import { getUserById } from "./userService";
 
 
 export interface Chat {
@@ -35,6 +36,7 @@ export interface Chat {
   pinnedAt?: Record<string, number>; // userId -> timestamp when pinned (ms)
   mutedBy?: string[]; // Array of user IDs who muted this chat
   favouritedBy?: string[]; // Array of user IDs who favorited this chat
+  participantJoinedAt?: Record<string, Timestamp>; // userId -> timestamp when joined
 }
 
 export interface PollOption {
@@ -115,6 +117,12 @@ export const createPrivateChat = async (currentUserId: string, otherUserId: stri
   const unreadCounts: Record<string, number> = {};
   unreadCounts[currentUserId] = 0;
   unreadCounts[otherUserId] = 0;
+
+  // Create joinedAt map
+  const participantJoinedAt: Record<string, Timestamp> = {
+    [currentUserId]: serverTimestamp() as Timestamp,
+    [otherUserId]: serverTimestamp() as Timestamp
+  };
   
   const newChat = await addDoc(chatsRef, {
     participants: [currentUserId, otherUserId],
@@ -123,6 +131,7 @@ export const createPrivateChat = async (currentUserId: string, otherUserId: stri
     type: "private",
     createdAt: serverTimestamp(),
     unreadCounts,
+    participantJoinedAt,
   });
   
   return newChat.id;
@@ -134,6 +143,7 @@ export interface Message {
   senderId: string;
   createdAt: Timestamp;
   readBy: string[]; // Array of user IDs who have read this message
+  type?: "text" | "image" | "location" | "contact" | "memo" | "system"; // Message type
   // Extended fields
   editedAt?: Timestamp; // When message was edited
   deleted?: boolean; // Soft delete flag
@@ -257,10 +267,21 @@ export const sendMessage = async (
 
 export const subscribeToMessages = (
   chatId: string, 
-  callback: (messages: Message[]) => void
+  callback: (messages: Message[]) => void,
+  joinedAt?: Timestamp
 ) => {
   const messagesRef = collection(db, "chats", chatId, "messages");
-  const q = query(messagesRef, orderBy("createdAt", "asc"));
+  
+  let q;
+  if (joinedAt) {
+    q = query(
+      messagesRef, 
+      where("createdAt", ">=", joinedAt),
+      orderBy("createdAt", "asc")
+    );
+  } else {
+    q = query(messagesRef, orderBy("createdAt", "asc"));
+  }
   
   return onSnapshot(q, (snapshot) => {
     const messages = snapshot.docs.map(docSnap => {
@@ -271,9 +292,30 @@ export const subscribeToMessages = (
         senderId: data.senderId || '',
         createdAt: data.createdAt,
         readBy: data.readBy || [],
+        type: data.type || 'text',
+        // Include other fields that might be present in data
+        ...data
       } as Message;
     });
     callback(messages);
+  });
+};
+
+export const subscribeToChat = (
+  chatId: string,
+  callback: (chat: Chat | null) => void
+) => {
+  const chatRef = doc(db, "chats", chatId);
+  
+  return onSnapshot(chatRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback({
+        id: docSnap.id,
+        ...docSnap.data(),
+      } as Chat);
+    } else {
+      callback(null);
+    }
   });
 };
 
@@ -800,6 +842,11 @@ export const leaveGroupChat = async (chatId: string, userId: string): Promise<vo
     throw new Error("Creator must assign another admin before leaving");
   }
   
+  
+  // Fetch user profile for display name
+  const userProfile = await getUserById(userId);
+  const displayName = userProfile?.displayName || "A user";
+  
   const batch = writeBatch(db);
   
   // Remove user from participants
@@ -816,7 +863,7 @@ export const leaveGroupChat = async (chatId: string, userId: string): Promise<vo
   // Add system message about user leaving
   const messagesRef = collection(db, "chats", chatId, "messages");
   batch.set(doc(messagesRef), {
-    text: "left the group",
+    text: `${displayName} left the group`,
     senderId: userId,
     createdAt: serverTimestamp(),
     readBy: [userId],
@@ -860,24 +907,112 @@ export const addParticipantsToGroup = async (
     throw new Error("All selected users are already participants");
   }
 
-  const batch = writeBatch(db);
+  // Fetch display names for all new participants
+  const userProfiles = await Promise.all(
+    newParticipants.map((userId) => getUserById(userId))
+  );
+  
+  const displayNames = userProfiles
+    .filter((profile) => profile !== null)
+    .map((profile) => profile!.displayName);
 
-  // Add new participants to the group
-  batch.update(chatRef, {
-    participants: [...currentParticipants, ...newParticipants],
+  // Create system message text
+  let systemMessageText: string;
+  if (displayNames.length >= 2) {
+    systemMessageText = `${displayNames.join(", ")} were added to the group`;
+  } else if (displayNames.length === 1) {
+    systemMessageText = `${displayNames[0]} was added to the group`;
+  } else {
+    systemMessageText = "New participants were added to the group";
+  }
+
+  // Prepare joinedAt updates for new participants
+  const joinedAtUpdates: Record<string, any> = {};
+  newParticipants.forEach(uid => {
+    joinedAtUpdates[`participantJoinedAt.${uid}`] = serverTimestamp();
   });
 
-  // Add system message for each added participant
+  const batch = writeBatch(db);
+
+  // Add new participants to the group and update joinedAt
+  batch.update(chatRef, {
+    participants: [...currentParticipants, ...newParticipants],
+    ...joinedAtUpdates
+  });
+
+  // Add single system message for all added participants
   const messagesRef = collection(db, "chats", chatId, "messages");
-  newParticipants.forEach((userId) => {
-    batch.set(doc(messagesRef), {
-      text: "was added to the group",
-      senderId: userId,
-      createdAt: serverTimestamp(),
-      readBy: [addedByUserId],
-      type: "system",
-    });
+  batch.set(doc(messagesRef), {
+    text: systemMessageText,
+    senderId: addedByUserId,
+    createdAt: serverTimestamp(),
+    readBy: [addedByUserId],
+    type: "system",
   });
 
   await batch.commit();
+};
+
+// Convert a DM (private chat) to a group chat by adding new participants
+export const convertDmToGroup = async (
+  originalChatId: string,
+  newParticipantIds: string[],
+  creatorId: string
+): Promise<string> => {
+  // Get the original DM chat
+  const originalChatRef = doc(db, "chats", originalChatId);
+  const originalChatDoc = await getDoc(originalChatRef);
+
+  if (!originalChatDoc.exists()) {
+    throw new Error("Original chat not found");
+  }
+
+  const originalChat = originalChatDoc.data();
+
+  if (originalChat.type !== "private") {
+    throw new Error("Can only convert private chats to groups");
+  }
+
+  // Combine original participants with new ones
+  const allParticipants = [
+    ...originalChat.participants,
+    ...newParticipantIds.filter(
+      (id: string) => !originalChat.participants.includes(id)
+    ),
+  ];
+
+  if (allParticipants.length < 3) {
+    throw new Error("A group chat requires at least 3 participants");
+  }
+
+  // Create joinedAt map for all participants
+  const joinedAtMap: Record<string, any> = {};
+  allParticipants.forEach(uid => {
+    joinedAtMap[uid] = serverTimestamp();
+  });
+
+  // Create a new group chat
+  const chatRef = await addDoc(collection(db, "chats"), {
+    type: "group",
+    participants: allParticipants,
+    groupName: "New Group",
+    groupCreatorId: creatorId,
+    groupAdminIds: [creatorId],
+    createdAt: serverTimestamp(),
+    lastMessage: "Group created",
+    lastMessageAt: serverTimestamp(),
+    participantJoinedAt: joinedAtMap,
+  });
+
+  // Add system message about group creation
+  const messagesRef = collection(db, "chats", chatRef.id, "messages");
+  await addDoc(messagesRef, {
+    text: "created this group",
+    senderId: creatorId,
+    createdAt: serverTimestamp(),
+    readBy: [creatorId],
+    type: "system",
+  });
+
+  return chatRef.id;
 };

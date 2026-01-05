@@ -9,14 +9,15 @@ import {
   Link as MuiLink,
   Alert,
   Paper,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { Clear as ClearIcon } from "@mui/icons-material";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -111,6 +112,20 @@ export default function ResetPasswordPage() {
             margin="normal"
             required
             disabled={success}
+            InputProps={{
+              endAdornment: email && !success && (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setEmail("")}
+                    edge="end"
+                    size="small"
+                    sx={{ color: "#8696A0" }}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "#2A3942",
@@ -150,7 +165,7 @@ export default function ResetPasswordPage() {
               </MuiLink>
             </Typography>
             <Typography sx={{ color: "#8696A0", fontSize: "0.875rem", mt: 1 }}>
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <MuiLink
                 component={Link}
                 href="/signup"

@@ -46,29 +46,29 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
       // Filter messages that have media
       const mediaMessages = messages.filter((msg) => {
         // Type assertion for extended message properties
-        const extendedMsg = msg as Message & { 
-          image?: string; 
-          fileUrl?: string; 
-          type?: string; 
+        const extendedMsg = msg as Message & {
+          image?: string;
+          fileUrl?: string;
+          type?: string;
         };
-        
+
         const hasImage = extendedMsg.image;
         const isImageType = extendedMsg.type === "image";
         const isVideoType = extendedMsg.type === "video";
         const isFileType = extendedMsg.type === "file";
-        
+
         return hasImage || isImageType || isVideoType || isFileType;
       });
 
       // Map to media items
       const items: MediaItem[] = mediaMessages.map((msg) => {
-        const extendedMsg = msg as Message & { 
-          image?: string; 
-          fileUrl?: string; 
-          type?: string; 
+        const extendedMsg = msg as Message & {
+          image?: string;
+          fileUrl?: string;
+          type?: string;
           createdAt?: { toMillis: () => number };
         };
-        
+
         return {
           id: msg.id,
           url: extendedMsg.image || extendedMsg.fileUrl || "",
@@ -96,20 +96,7 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
-      <Box sx={{ px: 2, py: 2, borderTop: "1px solid #2A3942" }}>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            color: "#00A884",
-            fontWeight: 500,
-            mb: 2,
-            fontSize: "0.875rem",
-          }}
-        >
-          SHARED MEDIA
-        </Typography>
-
+      <Box sx={{ px: 2, py: 2 }}>
         {/* Filter Tabs */}
         <Tabs
           value={activeTab}
