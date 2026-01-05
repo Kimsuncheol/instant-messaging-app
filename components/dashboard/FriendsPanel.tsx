@@ -9,7 +9,7 @@ import { SidebarUserInfo } from "./SidebarUserInfo";
 
 interface FriendsPanelProps {
   user: User;
-  width: number;
+  width: number | string;
   onAddFriend: () => void;
   onCreateGroup: () => void;
   onSelectChat: (chatId: string) => void;

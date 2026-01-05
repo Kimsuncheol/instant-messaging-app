@@ -12,6 +12,7 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { AddFriendModal } from "@/components/modals/AddFriendModal";
 import { CreateGroupModal } from "@/components/modals/CreateGroupModal";
 import { useChatStore } from "@/store/chatStore";
+import { useDevice } from "@/context/DeviceContext";
 
 const FRIENDS_PANEL_WIDTH = 300;
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [pendingFriendRequests, setPendingFriendRequests] = useState<FriendRequest[]>([]);
   const selectedChatId = useChatStore((state) => state.selectedChatId);
   const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
+  const { deviceInfo } = useDevice();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -54,20 +56,24 @@ export default function Home() {
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#0B141A" }}>
       {/* Left Panel: Friends */}
-      <FriendsPanel
-        user={user}
-        width={FRIENDS_PANEL_WIDTH}
-        onAddFriend={() => setIsAddFriendOpen(true)}
-        onCreateGroup={() => setIsCreateGroupOpen(true)}
-        onSelectChat={handleSelectChat}
-        pendingFriendRequestCount={pendingFriendRequests.length}
-      />
+      {(!deviceInfo.isMobile || !selectedChatId) && (
+        <FriendsPanel
+          user={user}
+          width={deviceInfo.isMobile ? "100%" : FRIENDS_PANEL_WIDTH}
+          onAddFriend={() => setIsAddFriendOpen(true)}
+          onCreateGroup={() => setIsCreateGroupOpen(true)}
+          onSelectChat={handleSelectChat}
+          pendingFriendRequestCount={pendingFriendRequests.length}
+        />
+      )}
       
       {/* Right Panel: ChatList or ChatView */}
-      <ChatPanel
-        selectedChatId={selectedChatId}
-        onSelectChat={handleSelectChat}
-      />
+      {(!deviceInfo.isMobile || selectedChatId) && (
+        <ChatPanel
+          selectedChatId={selectedChatId}
+          onSelectChat={handleSelectChat}
+        />
+      )}
       
       {/* Modals */}
       <AddFriendModal

@@ -40,15 +40,34 @@ interface DeviceProviderProps {
 }
 
 export const DeviceProvider: React.FC<DeviceProviderProps> = ({ children }) => {
-  const [deviceInfo] = useState<DeviceInfo>({
-    isMobile,
-    isTablet,
-    isDesktop,
-    isBrowser,
-    browserName,
-    osName,
-    deviceType,
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    isBrowser: true,
+    browserName: "",
+    osName: "",
+    deviceType: "",
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isWindowMobile = window.innerWidth <= 768;
+      setDeviceInfo({
+        isMobile: isMobile || isWindowMobile,
+        isTablet,
+        isDesktop: isDesktop && !isWindowMobile,
+        isBrowser,
+        browserName,
+        osName,
+        deviceType,
+      });
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <DeviceContext.Provider value={{ deviceInfo }}>
