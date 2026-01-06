@@ -434,8 +434,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             memo={message.memo}
             messageId={message.id}
             isOwn={isOwn}
+            createdAt={message.createdAt}
+            editedAt={message.editedAt}
           />
-          <Typography
+          {/* <Typography
             sx={{
               color: "rgba(255,255,255,0.6)",
               fontSize: "0.6875rem",
@@ -445,7 +447,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}
           >
             {formatTime(message.createdAt)}
-          </Typography>
+          </Typography> */}
         </Box>
       </Box>
     );

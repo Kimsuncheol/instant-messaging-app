@@ -90,7 +90,11 @@ export const AIGenerateDialog: React.FC<AIGenerateDialogProps> = ({
       <DialogContent sx={{ py: 3 }}>
         {/* Intent Input */}
         {!result && !loading && (
-          <IntentInput intent={intent} setIntent={setIntent} />
+          <IntentInput
+            intent={intent}
+            setIntent={setIntent}
+            onGenerate={handleGenerate}
+          />
         )}
 
         {loading && <LoadingState />}

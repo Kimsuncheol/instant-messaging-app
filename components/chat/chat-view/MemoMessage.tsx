@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import { Box, Typography, Collapse } from "@mui/material";
 import { Note as NoteIcon } from "@mui/icons-material";
+import { Timestamp } from "firebase/firestore";
 import { MemoData } from "@/components/modals/MemoModal";
 import { MemoActionsMenu } from "@/components/memo/MemoActionsMenu";
+import { useDateFormat } from "@/context/DateFormatContext";
 
 interface MemoMessageProps {
   memo: MemoData;
@@ -14,6 +16,8 @@ interface MemoMessageProps {
   onDelete?: (messageId: string) => void;
   onForward?: (memo: MemoData) => void;
   onReaction?: (emoji: string) => void;
+  createdAt?: Timestamp;
+  editedAt?: Timestamp;
 }
 
 const MAX_PREVIEW_LENGTH = 150;
@@ -26,7 +30,10 @@ export const MemoMessage: React.FC<MemoMessageProps> = ({
   onDelete,
   onForward,
   onReaction,
+  createdAt,
+  editedAt,
 }) => {
+  const { formatTime } = useDateFormat();
   const { title, content } = memo;
   const [expanded, setExpanded] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
@@ -143,6 +150,32 @@ export const MemoMessage: React.FC<MemoMessageProps> = ({
           >
             {expanded ? "Show less" : "Read more"}
           </Typography>
+        )}
+
+        {/* Timestamp and edited indicator */}
+        {createdAt && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 0.5,
+              mt: 0.5,
+            }}
+          >
+            {editedAt && (
+              <Typography
+                sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.6875rem" }}
+              >
+                edited
+              </Typography>
+            )}
+            <Typography
+              sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.6875rem" }}
+            >
+              {formatTime(createdAt)}
+            </Typography>
+          </Box>
         )}
       </Box>
 

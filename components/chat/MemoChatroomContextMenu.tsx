@@ -182,6 +182,12 @@ export const MemoChatroomContextMenu: React.FC<
             fullWidth
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleRenameSubmit();
+              }
+            }}
             placeholder="Enter folder name"
             autoFocus
             sx={{

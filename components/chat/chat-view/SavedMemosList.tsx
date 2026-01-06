@@ -7,6 +7,7 @@ import {
   List,
   ListItem,
   CircularProgress,
+  Checkbox,
 } from "@mui/material";
 import { MemoMessage } from "./MemoMessage";
 import { MemoData } from "@/components/modals/MemoModal";
@@ -18,6 +19,9 @@ interface SavedMemosListProps {
   onEdit: (memo: MemoData, memoId: string) => void;
   onDelete: (memoId: string) => void;
   onForward?: (memo: MemoData) => void;
+  selectionMode?: boolean;
+  selectedMemoIds?: Set<string>;
+  onToggleSelect?: (memoId: string) => void;
 }
 
 export const SavedMemosList: React.FC<SavedMemosListProps> = ({
@@ -26,6 +30,9 @@ export const SavedMemosList: React.FC<SavedMemosListProps> = ({
   onEdit,
   onDelete,
   onForward,
+  selectionMode = false,
+  selectedMemoIds = new Set(),
+  onToggleSelect,
 }) => {
   if (loading) {
     return (
@@ -61,10 +68,23 @@ export const SavedMemosList: React.FC<SavedMemosListProps> = ({
           key={memo.id}
           sx={{
             display: "flex",
+            alignItems: "flex-start",
             justifyContent: "flex-end",
             py: 1,
+            gap: 1,
           }}
         >
+          {selectionMode && (
+            <Checkbox
+              checked={selectedMemoIds.has(memo.id)}
+              onChange={() => onToggleSelect?.(memo.id)}
+              sx={{
+                color: "#8696A0",
+                "&.Mui-checked": { color: "#00A884" },
+                mt: 0.5,
+              }}
+            />
+          )}
           <MemoMessage
             memo={{ title: memo.title, content: memo.content }}
             messageId={memo.id}
@@ -72,6 +92,7 @@ export const SavedMemosList: React.FC<SavedMemosListProps> = ({
             onEdit={(memoData) => onEdit(memoData, memo.id)}
             onDelete={() => onDelete(memo.id)}
             onForward={onForward}
+            createdAt={memo.savedAt}
           />
         </ListItem>
       ))}

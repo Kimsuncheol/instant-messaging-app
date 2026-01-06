@@ -124,8 +124,9 @@ export const ChatList: React.FC<ChatListProps> = ({
 
   // Filter chats based on search term and active tab
   const filteredChats = chats.filter((chat) => {
-    // Mission 3: Filter out chatrooms without any message
-    if (!chat.lastMessage || !chat.lastMessageAt) {
+    // Filter out private chats without any messages
+    // Group chats are allowed even without messages
+    if (chat.type !== "group" && (!chat.lastMessage || !chat.lastMessageAt)) {
       return false;
     }
 
@@ -133,10 +134,12 @@ export const ChatList: React.FC<ChatListProps> = ({
     if (searchTerm.trim()) {
       const otherUser = getOtherUser(chat);
       const matchesSearch =
-        otherUser?.displayName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        otherUser?.email.toLowerCase().includes(searchTerm.toLowerCase());
+        chat.type === "group"
+          ? chat.groupName?.toLowerCase().includes(searchTerm.toLowerCase())
+          : otherUser?.displayName
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            otherUser?.email.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
     }
 
@@ -303,6 +306,16 @@ export const ChatList: React.FC<ChatListProps> = ({
             fullWidth
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (contextMenuChat && newGroupName.trim()) {
+                  await renameChat(contextMenuChat.id, newGroupName.trim());
+                  setRenameDialogOpen(false);
+                  setContextMenuChat(null);
+                }
+              }
+            }}
             placeholder="Enter group name"
             autoFocus
             sx={{

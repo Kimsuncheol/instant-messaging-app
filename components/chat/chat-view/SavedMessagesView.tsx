@@ -66,6 +66,12 @@ export const SavedMessagesView: React.FC<SavedMessagesViewProps> = ({
   );
   const [aiError, setAiError] = useState<string | undefined>();
 
+  // Selection state for partial message capture
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMemoIds, setSelectedMemoIds] = useState<Set<string>>(
+    new Set()
+  );
+
   // Find the chatroom name
   const chatroom = chatrooms.find((c) => c.id === chatroomId);
 
@@ -166,6 +172,14 @@ export const SavedMessagesView: React.FC<SavedMessagesViewProps> = ({
 
   // AI Handlers
   const handleSummarize = async () => {
+    // Determine which memos to summarize
+    const memosToSummarize =
+      selectionMode && selectedMemoIds.size > 0
+        ? currentMemos.filter((m) => selectedMemoIds.has(m.id))
+        : currentMemos;
+
+    if (memosToSummarize.length === 0) return;
+
     setSummaryDialogOpen(true);
     setSummaryLoading(true);
     setAiError(undefined);
@@ -173,9 +187,14 @@ export const SavedMessagesView: React.FC<SavedMessagesViewProps> = ({
 
     try {
       const result = await summarizeSavedMessages(
-        currentMemos.map((m) => ({ title: m.title, content: m.content }))
+        memosToSummarize.map((m) => ({ title: m.title, content: m.content }))
       );
       setSummaryResult(result);
+      // Exit selection mode after successful summary
+      if (selectionMode) {
+        setSelectionMode(false);
+        setSelectedMemoIds(new Set());
+      }
     } catch (err) {
       console.error("Summarization failed:", err);
       setAiError("Failed to summarize. Please check your API key.");
@@ -234,6 +253,21 @@ export const SavedMessagesView: React.FC<SavedMessagesViewProps> = ({
             setGenerateResult(null);
             setAiError(undefined);
           }}
+          selectionMode={selectionMode}
+          selectedCount={selectedMemoIds.size}
+          totalCount={currentMemos.length}
+          onToggleSelectionMode={() => {
+            setSelectionMode(!selectionMode);
+            if (selectionMode) {
+              setSelectedMemoIds(new Set());
+            }
+          }}
+          onSelectAll={() => {
+            setSelectedMemoIds(new Set(currentMemos.map((m) => m.id)));
+          }}
+          onClearSelection={() => {
+            setSelectedMemoIds(new Set());
+          }}
         />
 
         <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
@@ -243,6 +277,19 @@ export const SavedMessagesView: React.FC<SavedMessagesViewProps> = ({
             onEdit={handleEditClick}
             onDelete={handleDeleteMemo}
             onForward={handleForwardMemo}
+            selectionMode={selectionMode}
+            selectedMemoIds={selectedMemoIds}
+            onToggleSelect={(memoId) => {
+              setSelectedMemoIds((prev) => {
+                const newSet = new Set(prev);
+                if (newSet.has(memoId)) {
+                  newSet.delete(memoId);
+                } else {
+                  newSet.add(memoId);
+                }
+                return newSet;
+              });
+            }}
           />
         </Box>
 
