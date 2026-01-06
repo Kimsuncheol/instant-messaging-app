@@ -6,6 +6,7 @@ import { Message } from "@/lib/chatService";
 import { MessageBubble } from "./MessageBubble";
 import { SystemIndicator } from "./SystemIndicator";
 import { Timestamp } from "firebase/firestore";
+import { MemoData } from "@/components/modals/MemoModal";
 
 interface MessageListProps {
   messages: Message[];
@@ -24,6 +25,10 @@ interface MessageListProps {
   selectionMode?: boolean;
   selectedMessageIds?: Set<string>;
   onToggleSelect?: (messageId: string) => void;
+  // Memo action handlers
+  onMemoEdit?: (memo: MemoData, messageId: string) => void;
+  onMemoDelete?: (messageId: string) => void;
+  onMemoForward?: (memo: MemoData) => void;
 }
 
 // Helper to get date key from timestamp
@@ -88,6 +93,9 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
       selectionMode = false,
       selectedMessageIds = new Set(),
       onToggleSelect,
+      onMemoEdit,
+      onMemoDelete,
+      onMemoForward,
     },
     ref
   ) => {
@@ -182,6 +190,9 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
                   selectionMode={selectionMode}
                   isSelected={selectedMessageIds.has(msg.id)}
                   onToggleSelect={onToggleSelect}
+                  onMemoEdit={onMemoEdit}
+                  onMemoDelete={onMemoDelete}
+                  onMemoForward={onMemoForward}
                 />
               )}
             </Box>

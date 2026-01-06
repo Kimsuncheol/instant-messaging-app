@@ -12,6 +12,8 @@ import {
   Poll,
   voteOnPoll,
   rsvpToEvent,
+  editMessage,
+  deleteMessage,
 } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
 import { useCall } from "@/context/CallContext";
@@ -91,6 +93,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const [saveToMemoContent, setSaveToMemoContent] = useState<string | null>(
     null
   );
+  // Edit memo state
+  const [editingMemoData, setEditingMemoData] = useState<{
+    memo: MemoData;
+    messageId: string;
+  } | null>(null);
 
   const {
     searchTerm,
@@ -522,6 +529,31 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     }
   };
 
+  // Memo action handlers
+  const handleMemoEdit = (memo: MemoData, messageId: string) => {
+    setEditingMemoData({ memo, messageId });
+    setSaveToMemoContent(memo.content);
+    setMemoModalOpen(true);
+  };
+
+  const handleMemoDelete = async (messageId: string) => {
+    if (!user) return;
+    try {
+      await deleteMessage(chatId, messageId);
+    } catch (error) {
+      console.error("Error deleting memo message:", error);
+    }
+  };
+
+  const handleMemoForward = (memo: MemoData) => {
+    // Find the message with this memo to forward it
+    const memoMessage = messages.find((msg) => msg.memo === memo);
+    if (memoMessage) {
+      setForwardMessageState(memoMessage);
+      setForwardModalOpen(true);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -616,6 +648,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         selectionMode={selectionMode}
         selectedMessageIds={selectedMessageIds}
         onToggleSelect={handleToggleSelect}
+        onMemoEdit={handleMemoEdit}
+        onMemoDelete={handleMemoDelete}
+        onMemoForward={handleMemoForward}
       />
 
       <MessageInput
@@ -716,9 +751,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         onClose={() => {
           setMemoModalOpen(false);
           setSaveToMemoContent(null);
+          setEditingMemoData(null);
         }}
-        onSend={handleMemoSend}
+        onSend={async (memo, forwardToSelf, chatroomId) => {
+          if (editingMemoData) {
+            // Edit existing memo
+            try {
+              const updatedText = `📝 ${memo.title}\n\n${memo.content}`;
+              await editMessage(chatId, editingMemoData.messageId, updatedText);
+              setEditingMemoData(null);
+              setSaveToMemoContent(null);
+              setMemoModalOpen(false);
+            } catch (error) {
+              console.error("Error editing memo:", error);
+            }
+          } else {
+            // Create new memo
+            await handleMemoSend(memo, forwardToSelf, chatroomId);
+            setMemoModalOpen(false);
+          }
+        }}
         initialContent={saveToMemoContent || ""}
+        initialTitle={editingMemoData?.memo.title}
       />
 
       {/* Message Capture Modal */}

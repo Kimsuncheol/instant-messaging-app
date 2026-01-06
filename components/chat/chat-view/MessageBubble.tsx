@@ -20,6 +20,7 @@ import { EventMessage } from "./EventMessage";
 import { LocationMessage } from "./LocationMessage";
 import { ContactMessage } from "./ContactMessage";
 import { MemoMessage } from "./MemoMessage";
+import { MemoData } from "@/components/modals/MemoModal";
 
 interface MessageBubbleProps {
   message: Message;
@@ -39,6 +40,10 @@ interface MessageBubbleProps {
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (messageId: string) => void;
+  // Memo action handlers
+  onMemoEdit?: (memo: MemoData, messageId: string) => void;
+  onMemoDelete?: (messageId: string) => void;
+  onMemoForward?: (memo: MemoData) => void;
 }
 
 // Read status types for clarity
@@ -58,6 +63,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   selectionMode = false,
   isSelected = false,
   onToggleSelect,
+  onMemoEdit,
+  onMemoDelete,
+  onMemoForward,
 }) => {
   const { formatTime } = useDateFormat();
 
@@ -429,26 +437,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           mb: 0.5,
         }}
       >
-        <Box>
-          <MemoMessage
-            memo={message.memo}
-            messageId={message.id}
-            isOwn={isOwn}
-            createdAt={message.createdAt}
-            editedAt={message.editedAt}
-          />
-          {/* <Typography
-            sx={{
-              color: "rgba(255,255,255,0.6)",
-              fontSize: "0.6875rem",
-              textAlign: isOwn ? "right" : "left",
-              mt: 0.5,
-              px: 1,
-            }}
-          >
-            {formatTime(message.createdAt)}
-          </Typography> */}
-        </Box>
+        <MemoMessage
+          memo={message.memo}
+          messageId={message.id}
+          isOwn={isOwn}
+          createdAt={message.createdAt}
+          editedAt={message.editedAt}
+          onEdit={
+            isOwn && onMemoEdit
+              ? (memo) => onMemoEdit(memo, message.id)
+              : undefined
+          }
+          onDelete={
+            isOwn && onMemoDelete ? () => onMemoDelete(message.id) : undefined
+          }
+          onForward={
+            onMemoForward ? () => onMemoForward(message.memo!) : undefined
+          }
+        />
       </Box>
     );
   }
