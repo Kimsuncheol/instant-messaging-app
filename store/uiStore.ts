@@ -11,7 +11,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set) => ({
   headerHeightA: 60, // Default fallback
-  footerHeightB: 60, // Default fallback
+  footerHeightB: 76.61, // Default fallback
   activeMobileTab: 'friends', // Default to friends list (or chats, user choice. Friends is current default)
   setHeaderHeightA: (height) => set({ headerHeightA: height }),
   setFooterHeightB: (height) => set({ footerHeightB: height }),

@@ -11,6 +11,9 @@ import {
   Close as CloseIcon,
   SelectAll as SelectAllIcon,
 } from "@mui/icons-material";
+import { useDateFormat } from "@/context/DateFormatContext";
+// useUiState
+import { useUiStore } from "@/store/uiStore";
 
 interface SavedMessagesHeaderProps {
   chatroomName: string;
@@ -36,11 +39,13 @@ export const SavedMessagesHeader: React.FC<SavedMessagesHeaderProps> = ({
   onToggleSelectionMode,
   onSelectAll,
 }) => {
+  const { headerHeightA } = useUiStore();
   return (
     <Box
       sx={{
         display: "flex",
         alignItems: "center",
+        height: headerHeightA,
         gap: 1,
         p: 2,
         borderBottom: "1px solid #2A3942",
