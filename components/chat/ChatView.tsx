@@ -15,6 +15,7 @@ import {
 } from "@/lib/chatService";
 import { useAuth } from "@/context/AuthContext";
 import { useCall } from "@/context/CallContext";
+import { useMemoChatroom } from "@/context/MemoChatroomContext";
 import { getUserById, UserProfile } from "@/lib/userService";
 import {
   handleTyping,
@@ -51,6 +52,7 @@ interface ChatViewProps {
 export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
   const { user } = useAuth();
   const { startCall } = useCall();
+  const { saveMemoToChatroom } = useMemoChatroom();
   const [messages, setMessages] = useState<Message[]>([]);
   const [chat, setChat] = useState<Chat | null>(null);
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
@@ -293,7 +295,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
     handleSendMessage("", undefined, undefined, undefined, undefined, contact);
   };
 
-  const handleMemoSend = (memo: MemoData, forwardToSelf?: boolean) => {
+  const handleMemoSend = async (
+    memo: MemoData,
+    forwardToSelf?: boolean,
+    chatroomId?: string
+  ) => {
+    // Send memo to the current chat
     handleSendMessage(
       "",
       undefined,
@@ -303,9 +310,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
       undefined,
       memo
     );
-    // TODO: If forwardToSelf is true, also send to self-chat
-    if (forwardToSelf) {
-      console.log("Forward to self-chat:", memo);
+
+    // If forwardToSelf is true and chatroomId is provided, save to memo chatroom
+    if (forwardToSelf && chatroomId) {
+      try {
+        await saveMemoToChatroom(chatroomId, {
+          title: memo.title,
+          content: memo.content,
+          sourceChatId: chatId,
+        });
+      } catch (err) {
+        console.error("Failed to save memo to chatroom:", err);
+      }
     }
     setSaveToMemoContent(null);
   };

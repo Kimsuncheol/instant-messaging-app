@@ -2,18 +2,35 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-
-export type TabFilter = "all" | "unread" | "groups" | "favourites";
+import { useChatStore, TabFilter } from "@/store/chatStore";
 
 interface ChatFilterTabsProps {
-  activeTab: TabFilter;
-  onTabChange: (tab: TabFilter) => void;
+  // Props are now optional - component can work in controlled or uncontrolled mode
+  activeTab?: TabFilter;
+  onTabChange?: (tab: TabFilter) => void;
 }
 
 export const ChatFilterTabs: React.FC<ChatFilterTabsProps> = ({
-  activeTab,
-  onTabChange,
+  activeTab: controlledActiveTab,
+  onTabChange: controlledOnTabChange,
 }) => {
+  // Use store state if not controlled by props
+  const storeActiveTab = useChatStore((state) => state.activeTab);
+  const setStoreActiveTab = useChatStore((state) => state.setActiveTab);
+
+  // Determine if component is controlled or uncontrolled
+  const isControlled = controlledActiveTab !== undefined;
+  const activeTab = isControlled ? controlledActiveTab : storeActiveTab;
+
+  const handleTabChange = (tab: TabFilter) => {
+    // If controlled, call the callback
+    if (controlledOnTabChange) {
+      controlledOnTabChange(tab);
+    }
+    // Always update store for persistence
+    setStoreActiveTab(tab);
+  };
+
   const getTabStyle = (tab: TabFilter) => ({
     px: 2,
     py: 0.5,
@@ -28,21 +45,27 @@ export const ChatFilterTabs: React.FC<ChatFilterTabsProps> = ({
 
   return (
     <Box sx={{ px: 2, py: 1, display: "flex", gap: 1 }}>
-      <Box sx={getTabStyle("all")} onClick={() => onTabChange("all")}>
+      <Box sx={getTabStyle("all")} onClick={() => handleTabChange("all")}>
         All
       </Box>
-      <Box sx={getTabStyle("unread")} onClick={() => onTabChange("unread")}>
+      <Box sx={getTabStyle("unread")} onClick={() => handleTabChange("unread")}>
         Unread
       </Box>
-      <Box sx={getTabStyle("groups")} onClick={() => onTabChange("groups")}>
+      <Box sx={getTabStyle("groups")} onClick={() => handleTabChange("groups")}>
         Groups
       </Box>
       <Box
         sx={getTabStyle("favourites")}
-        onClick={() => onTabChange("favourites")}
+        onClick={() => handleTabChange("favourites")}
       >
         Favourites
+      </Box>
+      <Box sx={getTabStyle("saved")} onClick={() => handleTabChange("saved")}>
+        Saved
       </Box>
     </Box>
   );
 };
+
+// For backward compatibility, export the type
+export type { TabFilter };

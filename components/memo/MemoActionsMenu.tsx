@@ -93,25 +93,26 @@ export const MemoActionsMenu: React.FC<MemoActionsMenuProps> = ({
       }}
     >
       {/* Reaction Bar */}
-      {showReactions && (
-        <>
-          <Box sx={{ display: "flex", justifyContent: "center", px: 1, py: 0.5 }}>
-            {MEMO_REACTIONS.map((emoji) => (
-              <IconButton
-                key={emoji}
-                onClick={() => handleReaction(emoji)}
-                sx={{
-                  fontSize: "1.25rem",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-                }}
-              >
-                {emoji}
-              </IconButton>
-            ))}
-          </Box>
-          <Divider sx={{ bgcolor: "#2A3942" }} />
-        </>
-      )}
+      {showReactions && [
+        <Box
+          key="reaction-bar"
+          sx={{ display: "flex", justifyContent: "center", px: 1, py: 0.5 }}
+        >
+          {MEMO_REACTIONS.map((emoji) => (
+            <IconButton
+              key={emoji}
+              onClick={() => handleReaction(emoji)}
+              sx={{
+                fontSize: "1.25rem",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
+            >
+              {emoji}
+            </IconButton>
+          ))}
+        </Box>,
+        <Divider key="reaction-divider" sx={{ bgcolor: "#2A3942" }} />,
+      ]}
 
       {/* Copy */}
       <MenuItem
@@ -151,10 +152,11 @@ export const MemoActionsMenu: React.FC<MemoActionsMenuProps> = ({
       )}
 
       {/* Delete */}
-      {onDelete && messageId && (
-        <>
-          <Divider sx={{ bgcolor: "#2A3942" }} />
+      {onDelete &&
+        messageId && [
+          <Divider key="delete-divider" sx={{ bgcolor: "#2A3942" }} />,
           <MenuItem
+            key="delete-item"
             onClick={handleDelete}
             sx={{ py: 1.5, "&:hover": { bgcolor: "#182229" } }}
           >
@@ -162,9 +164,8 @@ export const MemoActionsMenu: React.FC<MemoActionsMenuProps> = ({
               <DeleteIcon sx={{ color: "#F15C6D" }} />
             </ListItemIcon>
             <ListItemText sx={{ color: "#F15C6D" }}>Delete</ListItemText>
-          </MenuItem>
-        </>
-      )}
+          </MenuItem>,
+        ]}
     </Menu>
   );
 };

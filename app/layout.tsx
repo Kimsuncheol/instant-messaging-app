@@ -8,9 +8,9 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { IntlProvider } from "@/components/providers/IntlProvider";
 import { DateFormatProvider } from "@/context/DateFormatContext";
 import { CallProvider } from "@/context/CallContext";
+import { MemoChatroomProvider } from "@/context/MemoChatroomContext";
 import { IncomingCallModal } from "@/components/modals/IncomingCallModal";
 import { ActiveCallModal } from "@/components/modals/ActiveCallModal";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,11 +43,13 @@ export default function RootLayout({
               <ThemeRegistry>
                 <DeviceProvider>
                   <AuthProvider>
-                    <CallProvider>
-                      {children}
-                      <IncomingCallModal />
-                      <ActiveCallModal />
-                    </CallProvider>
+                    <MemoChatroomProvider>
+                      <CallProvider>
+                        {children}
+                        <IncomingCallModal />
+                        <ActiveCallModal />
+                      </CallProvider>
+                    </MemoChatroomProvider>
                   </AuthProvider>
                 </DeviceProvider>
               </ThemeRegistry>
@@ -58,4 +60,3 @@ export default function RootLayout({
     </html>
   );
 }
-

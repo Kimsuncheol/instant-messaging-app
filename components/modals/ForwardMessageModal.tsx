@@ -1,33 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, Box, Tabs, Tab } from "@mui/material";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  List,
-  ListItemButton,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
-  Typography,
-  Box,
-  IconButton,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-} from "@mui/material";
-import { Close as CloseIcon, Search as SearchIcon } from "@mui/icons-material";
-import { Chat, subscribeToChats, forwardMessage } from "@/lib/chatService";
+  Chat,
+  subscribeToChats,
+  forwardMessage,
+  createPrivateChat,
+} from "@/lib/chatService";
 import { getUserById, UserProfile } from "@/lib/userService";
+import { getFriends, Friend } from "@/lib/friendService";
 import { useAuth } from "@/context/AuthContext";
+import { MemoData } from "@/components/modals/MemoModal";
+import {
+  ForwardModalHeader,
+  ForwardModalSearch,
+  ForwardChatList,
+  ForwardFriendList,
+} from "./forward";
+
+type ForwardTab = "chats" | "friends";
 
 interface ForwardMessageModalProps {
   open: boolean;
   onClose: () => void;
-  messageId: string;
-  chatId: string;
-  messageText: string;
+  messageId?: string;
+  chatId?: string;
+  messageText?: string;
+  // For memo forwarding
+  memoData?: MemoData;
+  onMemoForward?: (chatId: string, memo: MemoData) => Promise<void>;
 }
 
 export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
@@ -36,26 +38,62 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
   messageId,
   chatId,
   messageText,
+  memoData,
+  onMemoForward,
 }) => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<ForwardTab>("chats");
   const [chats, setChats] = useState<Chat[]>([]);
+  const [friendProfiles, setFriendProfiles] = useState<UserProfile[]>([]);
   const [chatUsers, setChatUsers] = useState<Record<string, UserProfile>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [forwarding, setForwarding] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Get preview text
+  const previewText = memoData
+    ? `📝 ${memoData.title}: ${memoData.content}`
+    : messageText;
 
   // Subscribe to chats
   useEffect(() => {
     if (!user || !open) return;
 
     const unsubscribe = subscribeToChats(user.uid, (chatList) => {
-      // Exclude current chat
-      setChats(chatList.filter((c) => c.id !== chatId));
+      // Exclude current chat if provided
+      setChats(chatId ? chatList.filter((c) => c.id !== chatId) : chatList);
     });
 
     return () => unsubscribe();
   }, [user, open, chatId]);
 
-  // Load user profiles
+  // Load friends and their profiles
+  useEffect(() => {
+    if (!user || !open) return;
+
+    const loadFriends = async () => {
+      setLoading(true);
+      try {
+        const friendsList = await getFriends(user.uid);
+        // Load UserProfile for each friend
+        const profiles = await Promise.all(
+          friendsList.map(async (friend: Friend) => {
+            const profile = await getUserById(friend.odUserId);
+            return profile;
+          })
+        );
+        setFriendProfiles(profiles.filter((p): p is UserProfile => p !== null));
+      } catch (error) {
+        console.error("Error loading friends:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFriends();
+  }, [user, open]);
+
+  // Load user profiles for chats
   useEffect(() => {
     if (!user || chats.length === 0) return;
 
@@ -81,37 +119,70 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
     loadUsers();
   }, [chats, user]);
 
-  const getChatDisplayName = (chat: Chat): string => {
-    if (chat.type === "group") {
-      return chat.groupName || "Unnamed Group";
-    }
-    const otherUserId = chat.participants.find((p) => p !== user?.uid);
-    return otherUserId ? chatUsers[otherUserId]?.displayName || "Unknown" : "Unknown";
-  };
+  // Filter chats
+  const filteredChats = chats.filter((chat) => {
+    const displayName =
+      chat.type === "group"
+        ? chat.groupName || "Unnamed Group"
+        : chatUsers[chat.participants.find((p) => p !== user?.uid) || ""]
+            ?.displayName || "";
+    return displayName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
-  const getChatPhoto = (chat: Chat): string | undefined => {
-    if (chat.type === "group") {
-      return chat.groupPhotoURL;
-    }
-    const otherUserId = chat.participants.find((p) => p !== user?.uid);
-    return otherUserId ? chatUsers[otherUserId]?.photoURL : undefined;
-  };
-
-  const filteredChats = chats.filter((chat) =>
-    getChatDisplayName(chat).toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter friends
+  const filteredFriends = friendProfiles.filter(
+    (friend) =>
+      friend.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      friend.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleForward = async (destinationChatId: string) => {
+  const handleForwardToChat = async (destinationChatId: string) => {
     if (!user) return;
     setForwarding(true);
     try {
-      await forwardMessage(chatId, messageId, destinationChatId, user.uid);
+      if (memoData && onMemoForward) {
+        await onMemoForward(destinationChatId, memoData);
+      } else if (messageId && chatId) {
+        await forwardMessage(chatId, messageId, destinationChatId, user.uid);
+      }
       onClose();
     } catch (error) {
       console.error("Error forwarding message:", error);
     } finally {
       setForwarding(false);
     }
+  };
+
+  const handleForwardToFriend = async (friendId: string) => {
+    if (!user) return;
+    setForwarding(true);
+    try {
+      // Check if private chat exists with this friend
+      const existingChat = chats.find(
+        (c) =>
+          c.type === "private" &&
+          c.participants.includes(friendId) &&
+          c.participants.includes(user.uid)
+      );
+
+      let targetChatId: string;
+      if (existingChat) {
+        targetChatId = existingChat.id;
+      } else {
+        // Create new private chat
+        targetChatId = await createPrivateChat(user.uid, friendId);
+      }
+
+      await handleForwardToChat(targetChatId);
+    } catch (error) {
+      console.error("Error forwarding to friend:", error);
+      setForwarding(false);
+    }
+  };
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: ForwardTab) => {
+    setActiveTab(newValue);
+    setSearchTerm("");
   };
 
   return (
@@ -128,93 +199,54 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          bgcolor: "#202C33",
-        }}
-      >
-        <Typography sx={{ fontWeight: 500 }}>Forward message</Typography>
-        <IconButton onClick={onClose} sx={{ color: "#AEBAC1" }}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      <ForwardModalHeader title="Forward message" onClose={onClose} />
 
-      <Box sx={{ p: 2, bgcolor: "#202C33" }}>
-        {/* Preview */}
-        <Box
-          sx={{
-            bgcolor: "#005C4B",
-            borderRadius: 1,
-            p: 1.5,
-            mb: 2,
-          }}
-        >
-          <Typography sx={{ color: "#E9EDEF", fontSize: "0.875rem" }}>
-            {messageText.length > 100 ? `${messageText.slice(0, 100)}...` : messageText}
-          </Typography>
-        </Box>
+      <ForwardModalSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        previewText={previewText}
+      />
 
-        {/* Search */}
-        <TextField
-          fullWidth
-          placeholder="Search chats"
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#8696A0" }} />
-              </InputAdornment>
-            ),
-          }}
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "#2A3942" }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
           sx={{
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "#2A3942",
-              borderRadius: "8px",
-              "& fieldset": { border: "none" },
-              "& input": { color: "#E9EDEF" },
+            "& .MuiTab-root": {
+              color: "#8696A0",
+              textTransform: "none",
+              fontWeight: 500,
+              "&.Mui-selected": {
+                color: "#00A884",
+              },
+            },
+            "& .MuiTabs-indicator": {
+              bgcolor: "#00A884",
             },
           }}
-        />
+        >
+          <Tab label="Chats" value="chats" />
+          <Tab label="Friends" value="friends" />
+        </Tabs>
       </Box>
 
       <DialogContent sx={{ p: 0 }}>
-        {forwarding ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress sx={{ color: "#00A884" }} />
-          </Box>
+        {activeTab === "chats" ? (
+          <ForwardChatList
+            chats={filteredChats}
+            chatUsers={chatUsers}
+            currentUserId={user?.uid}
+            loading={forwarding}
+            onSelect={handleForwardToChat}
+          />
         ) : (
-          <List>
-            {filteredChats.map((chat) => (
-              <ListItemButton
-                key={chat.id}
-                onClick={() => handleForward(chat.id)}
-                sx={{
-                  py: 1.5,
-                  "&:hover": { bgcolor: "#202C33" },
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar
-                    src={getChatPhoto(chat)}
-                    sx={{
-                      bgcolor: chat.type === "group" ? "#00A884" : "#6B7C85",
-                    }}
-                  >
-                    {getChatDisplayName(chat)[0]}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={getChatDisplayName(chat)}
-                  primaryTypographyProps={{ color: "#E9EDEF" }}
-                />
-              </ListItemButton>
-            ))}
-          </List>
+          <ForwardFriendList
+            friends={filteredFriends}
+            loading={loading || forwarding}
+            onSelect={handleForwardToFriend}
+          />
         )}
       </DialogContent>
     </Dialog>

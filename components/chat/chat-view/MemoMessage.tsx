@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, Typography, IconButton, Collapse } from "@mui/material";
-import {
-  Note as NoteIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-} from "@mui/icons-material";
+import { Box, Typography, Collapse } from "@mui/material";
+import { Note as NoteIcon } from "@mui/icons-material";
 import { MemoData } from "@/components/modals/MemoModal";
 import { MemoActionsMenu } from "@/components/memo/MemoActionsMenu";
 
@@ -33,7 +29,11 @@ export const MemoMessage: React.FC<MemoMessageProps> = ({
 }) => {
   const { title, content } = memo;
   const [expanded, setExpanded] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
   const isLong = content.length > MAX_PREVIEW_LENGTH;
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -45,89 +45,105 @@ export const MemoMessage: React.FC<MemoMessageProps> = ({
     setMenuPosition(null);
   };
 
+  const handleToggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded(!expanded);
+  };
+
   return (
     <>
       <Box
         onContextMenu={handleContextMenu}
         sx={{
-          width: 280,
-          borderRadius: 2,
-          overflow: "hidden",
-          bgcolor: "#1F2C34",
-          border: "1px solid #FFA726",
+          maxWidth: "65%",
+          minWidth: 200,
+          px: 1.5,
+          py: 0.75,
+          borderRadius: isOwn ? "8px 8px 0 8px" : "8px 8px 8px 0",
+          bgcolor: isOwn ? "#005C4B" : "#202C33",
           cursor: "context-menu",
+          "&:hover": { opacity: 0.95 },
         }}
       >
-        {/* Header */}
+        {/* Memo header with icon */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1,
-            p: 1.5,
-            bgcolor: "rgba(255,167,38,0.15)",
-            borderBottom: "1px solid #2A3942",
+            gap: 0.75,
+            mb: 0.5,
           }}
         >
-          <NoteIcon sx={{ color: "#FFA726", fontSize: 20 }} />
-          <Typography
-            variant="subtitle2"
+          <NoteIcon
             sx={{
-              color: "#E9EDEF",
-              fontWeight: 600,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
+              fontSize: 14,
+              color: isOwn ? "#00A884" : "#FFA726",
+            }}
+          />
+          <Typography
+            sx={{
+              color: isOwn ? "#00A884" : "#FFA726",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
             }}
           >
-            {title}
+            Memo
           </Typography>
-          {isLong && (
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded(!expanded);
-              }}
-              sx={{ color: "#8696A0" }}
-            >
-              {expanded ? <CollapseIcon /> : <ExpandIcon />}
-            </IconButton>
-          )}
         </Box>
 
+        {/* Title */}
+        <Typography
+          sx={{
+            color: "#E9EDEF",
+            fontWeight: 600,
+            fontSize: "0.9375rem",
+            wordBreak: "break-word",
+            mb: 0.5,
+          }}
+        >
+          {title}
+        </Typography>
+
         {/* Content */}
-        <Box sx={{ p: 1.5 }}>
-          <Collapse in={expanded || !isLong} collapsedSize={isLong ? 60 : undefined}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#D1D7DB",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {content}
-            </Typography>
-          </Collapse>
-          
-          {isLong && !expanded && (
-            <Typography
-              variant="caption"
-              onClick={() => setExpanded(true)}
-              sx={{
-                color: "#FFA726",
-                cursor: "pointer",
-                display: "block",
-                mt: 0.5,
-                "&:hover": { textDecoration: "underline" },
-              }}
-            >
-              Read more...
-            </Typography>
-          )}
-        </Box>
+        <Collapse
+          in={expanded || !isLong}
+          collapsedSize={isLong ? 48 : undefined}
+          timeout={200}
+        >
+          <Typography
+            sx={{
+              color: "#D1D7DB",
+              fontSize: "0.875rem",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              lineHeight: 1.4,
+            }}
+          >
+            {content}
+          </Typography>
+        </Collapse>
+
+        {/* Read more/less link */}
+        {isLong && (
+          <Typography
+            component="span"
+            onClick={handleToggleExpand}
+            sx={{
+              color: isOwn ? "#53BDEB" : "#53BDEB",
+              fontSize: "0.8125rem",
+              cursor: "pointer",
+              display: "inline-block",
+              mt: 0.5,
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            }}
+          >
+            {expanded ? "Show less" : "Read more"}
+          </Typography>
+        )}
       </Box>
 
       {/* Context Menu */}

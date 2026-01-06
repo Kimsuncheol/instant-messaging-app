@@ -28,19 +28,23 @@ import {
   UserPresence,
 } from "@/lib/presenceService";
 import { ChatContextMenu } from "./ChatContextMenu";
+import { useChatStore } from "@/store/chatStore";
 
 // Sub-components
-import { ChatFilterTabs, TabFilter } from "./ChatFilterTabs";
+import { ChatFilterTabs } from "./ChatFilterTabs";
 import { ChatListItem } from "./ChatListItem";
+import { SavedMessagesList } from "./SavedMessagesList";
 
 interface ChatListProps {
   onSelectChat: (chatId: string) => void;
+  onSelectSavedChatroom?: (chatroomId: string) => void;
   selectedChatId?: string;
   searchTerm: string;
 }
 
 export const ChatList: React.FC<ChatListProps> = ({
   onSelectChat,
+  onSelectSavedChatroom,
   selectedChatId,
   searchTerm,
 }) => {
@@ -48,7 +52,13 @@ export const ChatList: React.FC<ChatListProps> = ({
   const [chats, setChats] = useState<Chat[]>([]);
   const [chatUsers, setChatUsers] = useState<Record<string, UserProfile>>({});
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
-  const [activeTab, setActiveTab] = useState<TabFilter>("all");
+
+  // Use Zustand store for activeTab instead of local state
+  const activeTab = useChatStore((state) => state.activeTab);
+
+  const [selectedSavedChatroomId, setSelectedSavedChatroomId] = useState<
+    string | undefined
+  >(undefined);
 
   // Context menu state
   const [contextMenuAnchor, setContextMenuAnchor] = useState<{
@@ -183,64 +193,77 @@ export const ChatList: React.FC<ChatListProps> = ({
       }}
     >
       {/* Filter Tabs */}
-      <ChatFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <ChatFilterTabs />
 
-      {/* Chat List */}
-      <List sx={{ flexGrow: 1, overflowY: "auto", py: 0 }}>
-        {sortedChats.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 4, px: 3 }}>
-            <Typography sx={{ color: "#8696A0", fontSize: "0.9375rem" }}>
-              No conversations yet.
-              <br />
-              Start a new chat to begin messaging.
-            </Typography>
-          </Box>
-        ) : (
-          sortedChats.map((chat) => {
-            const isGroup = chat.type === "group";
-            const otherUserId = !isGroup
-              ? chat.participants.find((p) => p !== user?.uid)
-              : undefined;
-            const chatIsPinned = user ? isPinned(chat, user.uid) : false;
+      {/* Saved Messages List - shown when saved tab is active */}
+      {activeTab === "saved" ? (
+        <SavedMessagesList
+          onSelectChatroom={(chatroomId) => {
+            setSelectedSavedChatroomId(chatroomId);
+            if (onSelectSavedChatroom) {
+              onSelectSavedChatroom(chatroomId);
+            }
+          }}
+          selectedChatroomId={selectedSavedChatroomId}
+        />
+      ) : (
+        /* Regular Chat List */
+        <List sx={{ flexGrow: 1, overflowY: "auto", py: 0 }}>
+          {sortedChats.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 4, px: 3 }}>
+              <Typography sx={{ color: "#8696A0", fontSize: "0.9375rem" }}>
+                No conversations yet.
+                <br />
+                Start a new chat to begin messaging.
+              </Typography>
+            </Box>
+          ) : (
+            sortedChats.map((chat) => {
+              const isGroup = chat.type === "group";
+              const otherUserId = !isGroup
+                ? chat.participants.find((p) => p !== user?.uid)
+                : undefined;
+              const chatIsPinned = user ? isPinned(chat, user.uid) : false;
 
-            const handleContextMenu = (e: React.MouseEvent) => {
-              e.preventDefault();
-              setContextMenuAnchor({ top: e.clientY, left: e.clientX });
-              setContextMenuChat(chat);
-            };
-
-            const handleTouchStart = () => {
-              longPressTimer.current = setTimeout(() => {
+              const handleContextMenu = (e: React.MouseEvent) => {
+                e.preventDefault();
+                setContextMenuAnchor({ top: e.clientY, left: e.clientX });
                 setContextMenuChat(chat);
-                setContextMenuAnchor({ top: 200, left: 100 });
-              }, 500);
-            };
+              };
 
-            const handleTouchEnd = () => {
-              if (longPressTimer.current) {
-                clearTimeout(longPressTimer.current);
-              }
-            };
+              const handleTouchStart = () => {
+                longPressTimer.current = setTimeout(() => {
+                  setContextMenuChat(chat);
+                  setContextMenuAnchor({ top: 200, left: 100 });
+                }, 500);
+              };
 
-            return (
-              <ChatListItem
-                key={chat.id}
-                chat={chat}
-                selected={selectedChatId === chat.id}
-                onSelect={onSelectChat}
-                user={user}
-                getOtherUser={getOtherUser}
-                presence={otherUserId ? presences[otherUserId] : undefined}
-                isPinned={chatIsPinned}
-                isFavorited={user ? isFavorited(chat, user.uid) : false}
-                onContextMenu={handleContextMenu}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              />
-            );
-          })
-        )}
-      </List>
+              const handleTouchEnd = () => {
+                if (longPressTimer.current) {
+                  clearTimeout(longPressTimer.current);
+                }
+              };
+
+              return (
+                <ChatListItem
+                  key={chat.id}
+                  chat={chat}
+                  selected={selectedChatId === chat.id}
+                  onSelect={onSelectChat}
+                  user={user}
+                  getOtherUser={getOtherUser}
+                  presence={otherUserId ? presences[otherUserId] : undefined}
+                  isPinned={chatIsPinned}
+                  isFavorited={user ? isFavorited(chat, user.uid) : false}
+                  onContextMenu={handleContextMenu}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                />
+              );
+            })
+          )}
+        </List>
+      )}
 
       {/* Context Menu */}
       <ChatContextMenu

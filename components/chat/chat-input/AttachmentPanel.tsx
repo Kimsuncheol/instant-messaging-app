@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Box, IconButton, Typography, Slide, Paper } from "@mui/material";
 import {
   Image as GalleryIcon,
@@ -89,6 +89,10 @@ const attachmentOptions: AttachmentOption[] = [
   { type: "memo", icon: <MemoIcon />, label: "Memo", color: "#FFA726" },
 ];
 
+// Pagination constants
+const ITEMS_PER_PAGE = 12; // 4 columns x 3 rows
+const COLUMNS = 4;
+
 interface AttachmentPanelProps {
   open: boolean;
   onClose: () => void;
@@ -100,9 +104,22 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
   onClose,
   onSelect,
 }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(attachmentOptions.length / ITEMS_PER_PAGE);
+
+  // Get current page items
+  const startIndex = currentPage * ITEMS_PER_PAGE;
+  const currentItems = attachmentOptions.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
   const handleSelect = (type: AttachmentType) => {
     onSelect(type);
     onClose();
+    setCurrentPage(0); // Reset to first page on close
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, type: AttachmentType) => {
@@ -110,6 +127,33 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
       e.preventDefault();
       handleSelect(type);
     }
+  };
+
+  const handleSwipe = (direction: "left" | "right") => {
+    if (direction === "left" && currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    } else if (direction === "right" && currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Touch handling for swipe
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+
+    if (Math.abs(diff) > 50) {
+      // Minimum swipe distance
+      handleSwipe(diff > 0 ? "left" : "right");
+    }
+    setTouchStart(null);
   };
 
   if (!open) return null;
@@ -147,7 +191,10 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
             Share
           </Typography>
           <IconButton
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              setCurrentPage(0);
+            }}
             size="small"
             sx={{ color: "#8696A0" }}
             aria-label="Close attachment panel"
@@ -158,16 +205,19 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
 
         {/* Attachment Grid */}
         <Box
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
             gap: 2,
             p: 3,
+            minHeight: 240, // Fixed height for consistency
           }}
           role="menu"
           aria-label="Attachment options"
         >
-          {attachmentOptions.map((option) => (
+          {currentItems.map((option) => (
             <Box
               key={option.type}
               onClick={() => handleSelect(option.type)}
@@ -224,6 +274,38 @@ export const AttachmentPanel: React.FC<AttachmentPanelProps> = ({
             </Box>
           ))}
         </Box>
+
+        {/* Pagination Dots */}
+        {totalPages > 1 && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 0.75,
+              pb: 2,
+            }}
+          >
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <Box
+                key={index}
+                onClick={() => setCurrentPage(index)}
+                sx={{
+                  width: currentPage === index ? 8 : 6,
+                  height: currentPage === index ? 8 : 6,
+                  borderRadius: "50%",
+                  bgcolor: currentPage === index ? "#00A884" : "#8696A0",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    bgcolor: currentPage === index ? "#00A884" : "#A0AEB7",
+                    transform: "scale(1.2)",
+                  },
+                }}
+              />
+            ))}
+          </Box>
+        )}
       </Paper>
     </Slide>
   );
