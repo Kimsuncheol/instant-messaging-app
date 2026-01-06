@@ -9,6 +9,7 @@ import { IntlProvider } from "@/components/providers/IntlProvider";
 import { DateFormatProvider } from "@/context/DateFormatContext";
 import { CallProvider } from "@/context/CallContext";
 import { MemoChatroomProvider } from "@/context/MemoChatroomContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import { IncomingCallModal } from "@/components/modals/IncomingCallModal";
 import { ActiveCallModal } from "@/components/modals/ActiveCallModal";
 
@@ -43,13 +44,15 @@ export default function RootLayout({
               <ThemeRegistry>
                 <DeviceProvider>
                   <AuthProvider>
-                    <MemoChatroomProvider>
-                      <CallProvider>
-                        {children}
-                        <IncomingCallModal />
-                        <ActiveCallModal />
-                      </CallProvider>
-                    </MemoChatroomProvider>
+                    <SubscriptionProvider>
+                      <MemoChatroomProvider>
+                        <CallProvider>
+                          {children}
+                          <IncomingCallModal />
+                          <ActiveCallModal />
+                        </CallProvider>
+                      </MemoChatroomProvider>
+                    </SubscriptionProvider>
                   </AuthProvider>
                 </DeviceProvider>
               </ThemeRegistry>

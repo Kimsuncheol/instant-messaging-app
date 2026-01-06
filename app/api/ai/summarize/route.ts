@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAgent, tool } from "langchain";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import * as z from "zod";
+import { checkQuota, incrementUsage } from "@/lib/billingService";
 
 // Schema for summarization output
 const SummaryOutputSchema = z.object({
@@ -40,6 +41,28 @@ const summarizeTool = tool(
 
 export async function POST(request: NextRequest) {
   try {
+    // Get user ID from header
+    const userId = request.headers.get("x-user-id");
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Check quota before processing
+    const quotaCheck = await checkQuota(userId, "aiSummary");
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: "AI summary quota exceeded",
+          quota: quotaCheck,
+          upgradeRequired: true,
+        },
+        { status: 402 }
+      );
+    }
+
     const { messages } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -93,9 +116,16 @@ export async function POST(request: NextRequest) {
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         const validated = SummaryOutputSchema.parse(parsed);
+        
+        // Increment usage on success
+        await incrementUsage(userId, "aiSummary");
+        
         return NextResponse.json(validated);
       }
 
+      // Fallback response - still increment usage
+      await incrementUsage(userId, "aiSummary");
+      
       return NextResponse.json({
         summary: content.slice(0, 200),
         keyPoints: ["Unable to extract structured key points"],
