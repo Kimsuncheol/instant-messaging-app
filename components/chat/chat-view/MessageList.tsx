@@ -152,6 +152,8 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
         sx={{
           flexGrow: 1,
           overflowY: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
           px: 3,
           py: 2,
           backgroundImage: "url('/chat-bg.png')",
