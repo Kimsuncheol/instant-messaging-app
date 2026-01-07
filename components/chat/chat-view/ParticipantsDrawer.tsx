@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Drawer, Box, Typography, IconButton, Collapse } from "@mui/material";
-import {
-  Close as CloseIcon,
-  KeyboardArrowDown,
-  KeyboardArrowRight,
-} from "@mui/icons-material";
+import { Drawer, Box, Typography, IconButton } from "@mui/material";
+import { Close as CloseIcon } from "@mui/icons-material";
 import {
   Chat,
   leaveGroupChat,
@@ -27,6 +23,12 @@ import { AddParticipantsButton } from "./AddParticipantsButton";
 import { AddParticipantsModal } from "./AddParticipantsModal";
 import { AddParticipantsPanel } from "./AddParticipantsPanel";
 import { useDevice } from "@/context/DeviceContext";
+import { CollapseSection } from "./CollapseSection";
+import { MemoPreview } from "./MemoPreview";
+import { SharedMediaView } from "./SharedMediaView";
+import { MemoListView } from "./MemoListView";
+
+type ActiveView = "drawer" | "media" | "memos";
 
 interface ParticipantsDrawerProps {
   open: boolean;
@@ -54,7 +56,11 @@ export const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(true);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [memosOpen, setMemosOpen] = useState(false);
   const { deviceInfo } = useDevice();
+
+  // View switching state
+  const [activeView, setActiveView] = useState<ActiveView>("drawer");
 
   const setSelectedChatId = useChatStore((state) => state.setSelectedChatId);
 
@@ -112,15 +118,35 @@ export const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     }
   };
 
-  // const shouldShowLeaveButton =
-  //   isGroup && chat && user && chat.groupCreatorId !== user.uid;
+  const handleBackFromView = () => {
+    setActiveView("drawer");
+  };
+
+  const handleClose = () => {
+    setActiveView("drawer");
+    onClose();
+  };
+
+  // Render full-screen view components
+  const renderActiveView = () => {
+    if (!chat) return null;
+
+    switch (activeView) {
+      case "media":
+        return <SharedMediaView chatId={chat.id} onBack={handleBackFromView} />;
+      case "memos":
+        return <MemoListView chatId={chat.id} onBack={handleBackFromView} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
       <Drawer
         anchor="right"
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         sx={{
           "& .MuiDrawer-paper": {
             width: { xs: "100%", sm: 400 },
@@ -129,113 +155,93 @@ export const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           },
         }}
       >
-        {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            px: 2,
-            py: 2,
-            bgcolor: "#202C33",
-            borderBottom: "1px solid #2A3942",
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1.125rem" }}
-          >
-            {isGroup ? "Group Info" : "Chat Info"}
-          </Typography>
-          <IconButton onClick={onClose} sx={{ color: "#AEBAC1" }}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        {/* Group Info Header */}
-        {isGroup && chat && <GroupInfoHeader chat={chat} />}
-
-        {/* Collapsible Participants Section */}
-        <Box sx={{ borderBottom: "1px solid #2A3942" }}>
-          <Box
-            onClick={() => setParticipantsOpen(!participantsOpen)}
-            sx={{
-              px: 2,
-              py: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              cursor: "pointer",
-              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)" },
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "#8696A0", fontWeight: 500 }}
-            >
-              {participants.length}{" "}
-              {participants.length === 1 ? "PARTICIPANT" : "PARTICIPANTS"}
-            </Typography>
-            {participantsOpen ? (
-              <KeyboardArrowDown sx={{ color: "#8696A0" }} />
-            ) : (
-              <KeyboardArrowRight sx={{ color: "#8696A0" }} />
-            )}
-          </Box>
-          <Collapse in={participantsOpen}>
-            <ParticipantsList
-              participants={participants}
-              currentUserId={user?.uid}
-              isOpen={open}
-              onParticipantClick={handleParticipantClick}
-            />
-          </Collapse>
-        </Box>
-
-        {/* Collapsible Media Section */}
-        {chat && (
-          <Box sx={{ borderBottom: "1px solid #2A3942" }}>
+        {/* Render full view if active, otherwise show drawer content */}
+        {activeView !== "drawer" ? (
+          renderActiveView()
+        ) : (
+          <>
+            {/* Header */}
             <Box
-              onClick={() => setMediaOpen(!mediaOpen)}
               sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
                 px: 2,
                 py: 2,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                cursor: "pointer",
-                "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)" },
+                bgcolor: "#202C33",
+                borderBottom: "1px solid #2A3942",
               }}
             >
               <Typography
-                variant="subtitle2"
-                sx={{ color: "#8696A0", fontWeight: 500 }}
+                variant="h6"
+                sx={{ color: "#E9EDEF", fontWeight: 500, fontSize: "1.125rem" }}
               >
-                SHARED MEDIA
+                {isGroup ? "Group Info" : "Chat Info"}
               </Typography>
-              {mediaOpen ? (
-                <KeyboardArrowDown sx={{ color: "#8696A0" }} />
-              ) : (
-                <KeyboardArrowRight sx={{ color: "#8696A0" }} />
-              )}
+              <IconButton onClick={handleClose} sx={{ color: "#AEBAC1" }}>
+                <CloseIcon />
+              </IconButton>
             </Box>
-            <Collapse in={mediaOpen}>
-              <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
-                <MediaGallery chatId={chat.id} />
-              </Box>
-            </Collapse>
-          </Box>
-        )}
 
-        {/* Add Participants Button - For all chats (DM will convert to group) */}
-        {chat && <AddParticipantsButton onClick={handleAddParticipantsClick} />}
+            {/* Group Info Header */}
+            {isGroup && chat && <GroupInfoHeader chat={chat} />}
 
-        {/* Leave/Delete Button */}
-        {chat && user && (chat.groupCreatorId !== user.uid || !isGroup) && (
-          <LeaveButton
-            onClick={() => setLeaveDialogOpen(true)}
-            isGroup={isGroup}
-          />
+            {/* Collapsible Participants Section */}
+            <CollapseSection
+              title={`${participants.length} ${
+                participants.length === 1 ? "PARTICIPANT" : "PARTICIPANTS"
+              }`}
+              isOpen={participantsOpen}
+              onToggle={() => setParticipantsOpen(!participantsOpen)}
+              showMoreButton={false}
+            >
+              <ParticipantsList
+                participants={participants}
+                currentUserId={user?.uid}
+                isOpen={open}
+                onParticipantClick={handleParticipantClick}
+              />
+            </CollapseSection>
+
+            {/* Collapsible Media Section */}
+            {chat && (
+              <CollapseSection
+                title="SHARED MEDIA"
+                isOpen={mediaOpen}
+                onToggle={() => setMediaOpen(!mediaOpen)}
+                onMoreClick={() => setActiveView("media")}
+              >
+                <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
+                  <MediaGallery chatId={chat.id} />
+                </Box>
+              </CollapseSection>
+            )}
+
+            {/* Collapsible Memos Section */}
+            {chat && (
+              <CollapseSection
+                title="MEMOS"
+                isOpen={memosOpen}
+                onToggle={() => setMemosOpen(!memosOpen)}
+                onMoreClick={() => setActiveView("memos")}
+              >
+                <MemoPreview chatId={chat.id} maxItems={3} />
+              </CollapseSection>
+            )}
+
+            {/* Add Participants Button - For all chats (DM will convert to group) */}
+            {chat && (
+              <AddParticipantsButton onClick={handleAddParticipantsClick} />
+            )}
+
+            {/* Leave/Delete Button */}
+            {chat && user && (chat.groupCreatorId !== user.uid || !isGroup) && (
+              <LeaveButton
+                onClick={() => setLeaveDialogOpen(true)}
+                isGroup={isGroup}
+              />
+            )}
+          </>
         )}
       </Drawer>
 

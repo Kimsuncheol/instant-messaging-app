@@ -561,6 +561,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatId, onBack }) => {
         flexDirection: "column",
         width: "100%",
         height: "100vh",
+        overflow: "hidden",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
         bgcolor: "#0B141A",
       }}
     >
